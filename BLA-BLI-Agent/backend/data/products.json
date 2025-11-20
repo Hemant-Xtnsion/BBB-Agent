@@ -1,0 +1,1088 @@
+[
+  {
+    "id": "old_money_100",
+    "handle": "old-money",
+    "name": "Old Money - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "men",
+      "parfum",
+      "best_seller"
+    ],
+    "gender_profile": "for_him",
+    "oil_concentration_percent": 25,
+    "price": 755,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "Dry, elegant woody-floral parfum that smells like quiet power and generational wealth.",
+    "vibe_tags": [
+      "woody",
+      "floral",
+      "dry",
+      "mature",
+      "formal",
+      "luxury"
+    ],
+    "occasion_tags": [
+      "boardroom",
+      "formal_events",
+      "business_meetings"
+    ],
+    "season_tags": [
+      "autumn",
+      "winter"
+    ],
+    "notes": {
+      "head": [
+        "Apple",
+        "Davana",
+        "Chamomile"
+      ],
+      "heart": [
+        "Damask Rose",
+        "Cedar",
+        "Osmanthus"
+      ],
+      "base": [
+        "Vanilla Absolute",
+        "Tonka Bean",
+        "Patchouli"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/2_0f0ca980-69d6-416f-b0a5-f3405478ddbb.jpg?v=1761641553",
+    "product_url": "https://blabliblulife.com/products/old-money",
+    "add_to_cart_url": "/cart/add?id=50151027015975",
+    "reviews_count": 144,
+    "positioning_line": "Legacy. Grandeur. Power.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "by_the_beach_100",
+    "handle": "by-the-beach",
+    "name": "By the Beach - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "men",
+      "parfum",
+      "fresh"
+    ],
+    "gender_profile": "for_him",
+    "oil_concentration_percent": 20,
+    "price": 595,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "A fresh and clean perfume with a tangy symphony of lemon, bergamot, and apple. Smells like a quiet beach nap.",
+    "vibe_tags": [
+      "fresh",
+      "citrus",
+      "clean",
+      "breezy",
+      "casual"
+    ],
+    "occasion_tags": [
+      "weekend",
+      "vacation",
+      "daytime",
+      "casual_hangout"
+    ],
+    "season_tags": [
+      "summer",
+      "spring"
+    ],
+    "notes": {
+      "head": [
+        "Lemon",
+        "Orange",
+        "Passionfruit"
+      ],
+      "heart": [
+        "Caramel",
+        "Cashmere",
+        "Bergamot"
+      ],
+      "base": [
+        "Ambergris",
+        "Musky Vanilla",
+        "Apple"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/by_the_beach_1f2c7a8c-21dd-4003-ac1d-b41838dcd907.jpg?v=1761643319",
+    "product_url": "https://blabliblulife.com/products/by-the-beach",
+    "add_to_cart_url": "/cart/add?id=50151094911271",
+    "reviews_count": 123,
+    "positioning_line": "Quiet. Breezy. Serene.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "my_wingman_100",
+    "handle": "my-wingman-men-pefume",
+    "name": "My Wingman - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "men",
+      "parfum",
+      "spicy"
+    ],
+    "gender_profile": "for_him",
+    "oil_concentration_percent": 25,
+    "price": 755,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "A spicy and masculine blend of cardamom, tobacco, and cedar. Loyal, warm, and bold.",
+    "vibe_tags": [
+      "spicy",
+      "warm",
+      "masculine",
+      "smoky",
+      "charming"
+    ],
+    "occasion_tags": [
+      "date_night",
+      "evening",
+      "party"
+    ],
+    "season_tags": [
+      "winter",
+      "autumn"
+    ],
+    "notes": {
+      "head": [
+        "Cardamom",
+        "Cinnamon"
+      ],
+      "heart": [
+        "Black Pepper",
+        "Cumin",
+        "Tobacco"
+      ],
+      "base": [
+        "Patchouli",
+        "Vanilla",
+        "Cedar"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/My_wingman_36baa4e2-1a22-4574-8c5f-b64749f85e6d.jpg?v=1761644146",
+    "product_url": "https://blabliblulife.com/products/my-wingman-men-pefume",
+    "add_to_cart_url": "/cart/add?id=50151094026535",
+    "reviews_count": 117,
+    "positioning_line": "Ardent. Charming. Guardian.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "selfmade_100",
+    "handle": "self-made-long-lasting-men-perfume",
+    "name": "Selfmade - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "men",
+      "parfum",
+      "intense"
+    ],
+    "gender_profile": "for_him",
+    "oil_concentration_percent": 25,
+    "price": 675,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "An ambitious blend of bourbon, vanilla, and bergamot. Smells like earned power, not inherited.",
+    "vibe_tags": [
+      "ambitious",
+      "strong",
+      "vanilla",
+      "smoky",
+      "bold"
+    ],
+    "occasion_tags": [
+      "work",
+      "meeting",
+      "daily_wear"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Black Pepper"
+      ],
+      "heart": [
+        "Orange Blossom",
+        "Bergamot"
+      ],
+      "base": [
+        "Bourbon Vanilla",
+        "Amber",
+        "Patchouli"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/1_a6851cc0-0043-44bc-892a-5eda28e3dcb1.jpg?v=1761641344",
+    "product_url": "https://blabliblulife.com/products/self-made-long-lasting-men-perfume",
+    "add_to_cart_url": "/cart/add?id=50151088488743",
+    "reviews_count": 87,
+    "positioning_line": "Ambition. Hustle. Reign.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "love_drunk_100",
+    "handle": "love-drunk-best-unisex-perfume",
+    "name": "Love Drunk - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "unisex",
+      "parfum",
+      "romantic"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 755,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "A warm & romantic mix of cinnamon, nutmeg, and dates. Midnight confessions and mornings you don't regret.",
+    "vibe_tags": [
+      "romantic",
+      "gourmand",
+      "sweet",
+      "spicy",
+      "intoxicating"
+    ],
+    "occasion_tags": [
+      "date_night",
+      "intimate",
+      "evening"
+    ],
+    "season_tags": [
+      "winter",
+      "autumn"
+    ],
+    "notes": {
+      "head": [
+        "Cinnamon",
+        "Nutmeg",
+        "Bergamot"
+      ],
+      "heart": [
+        "Dates",
+        "Praline",
+        "Tuberose"
+      ],
+      "base": [
+        "Vanilla",
+        "Tonka Bean",
+        "Benzoin"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/10_205782e9-1600-4759-931f-8580989eaa23.jpg?v=1761642574",
+    "product_url": "https://blabliblulife.com/products/love-drunk-best-unisex-perfume",
+    "add_to_cart_url": "/cart/add?id=50151101694247",
+    "reviews_count": 138,
+    "positioning_line": "Intoxicating. Passionate. Infatuated.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "lights_off_100",
+    "handle": "lights-off-unisex-perfume",
+    "name": "Lights Off - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "unisex",
+      "parfum",
+      "sensual"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 755,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "A soft & sensual blend of passionfruit, caramel, and amber. Intimacy, you can wear.",
+    "vibe_tags": [
+      "sensual",
+      "fruity",
+      "warm",
+      "musky",
+      "secretive"
+    ],
+    "occasion_tags": [
+      "night_out",
+      "intimate",
+      "party"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Orange",
+        "Lemon",
+        "Passionfruit"
+      ],
+      "heart": [
+        "Fruits",
+        "Caramel"
+      ],
+      "base": [
+        "White Musk",
+        "Amber",
+        "Vanilla"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/9_594e5374-ab62-4f3d-963b-532053d2a650.jpg?v=1761642452",
+    "product_url": "https://blabliblulife.com/products/lights-off-unisex-perfume",
+    "add_to_cart_url": "/cart/add?id=50151103299879",
+    "reviews_count": 91,
+    "positioning_line": "Intimate. Forbidden. Secret.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "peaches_100",
+    "handle": "peaches",
+    "name": "Peaches - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "women",
+      "parfum",
+      "fruity"
+    ],
+    "gender_profile": "for_her",
+    "oil_concentration_percent": 25,
+    "price": 695,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "A fruity & fresh blend of mandarin orange, rose, and musk. Juicy, loud, and unapologetically wild.",
+    "vibe_tags": [
+      "fruity",
+      "fresh",
+      "wild",
+      "playful",
+      "loud"
+    ],
+    "occasion_tags": [
+      "daytime",
+      "brunch",
+      "party"
+    ],
+    "season_tags": [
+      "summer",
+      "spring"
+    ],
+    "notes": {
+      "head": [
+        "Mandarin Orange",
+        "Pear",
+        "Pepper"
+      ],
+      "heart": [
+        "Rose",
+        "Gardenia",
+        "Frangipani"
+      ],
+      "base": [
+        "Musk",
+        "Patchouli",
+        "Cedar"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/13.jpg?v=1761643036",
+    "product_url": "https://blabliblulife.com/products/peaches",
+    "add_to_cart_url": "/cart/add?id=50151098188071",
+    "reviews_count": 65,
+    "positioning_line": "Juicy. Loud. Wild.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "white_jazz_100",
+    "handle": "white-jazz",
+    "name": "White Jazz - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "women",
+      "parfum",
+      "floral"
+    ],
+    "gender_profile": "for_her",
+    "oil_concentration_percent": 25,
+    "price": 755,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "A classic & floral blend of jasmine and tuberose. A symphony of quiet command.",
+    "vibe_tags": [
+      "floral",
+      "classic",
+      "elegant",
+      "dainty",
+      "sophisticated"
+    ],
+    "occasion_tags": [
+      "office",
+      "formal",
+      "day_wear"
+    ],
+    "season_tags": [
+      "spring",
+      "summer"
+    ],
+    "notes": {
+      "head": [
+        "Rangoon Creeper"
+      ],
+      "heart": [
+        "Jasmine Bud"
+      ],
+      "base": [
+        "Tuberose"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/14.jpg?v=1761643211",
+    "product_url": "https://blabliblulife.com/products/white-jazz",
+    "add_to_cart_url": "/cart/add?id=50151098876199",
+    "reviews_count": 61,
+    "positioning_line": "Classic. Elegant. Dainty.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "hot_af_100",
+    "handle": "hot-af-women-perfume",
+    "name": "Hot AF - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "women",
+      "parfum",
+      "bold"
+    ],
+    "gender_profile": "for_her",
+    "oil_concentration_percent": 25,
+    "price": 655,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "A bold & spicy blend of blackcurrant, lily, and truffle. One spray and you're on fire.",
+    "vibe_tags": [
+      "bold",
+      "spicy",
+      "iconic",
+      "divine",
+      "bossy"
+    ],
+    "occasion_tags": [
+      "party",
+      "clubbing",
+      "night_out"
+    ],
+    "season_tags": [
+      "winter",
+      "night"
+    ],
+    "notes": {
+      "head": [
+        "Blackcurrant",
+        "Pear"
+      ],
+      "heart": [
+        "Iris",
+        "Jasmine",
+        "Orange Blossom"
+      ],
+      "base": [
+        "Praline",
+        "Vanilla",
+        "Patchouli"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/12.jpg?v=1761642896",
+    "product_url": "https://blabliblulife.com/products/hot-af-women-perfume",
+    "add_to_cart_url": "/cart/add?id=50151099793703",
+    "reviews_count": 73,
+    "positioning_line": "Iconic. Divine. Bossy.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "be_my_cookie_100",
+    "handle": "be-my-cookie-perfume-for-women",
+    "name": "Be My Cookie - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "women",
+      "parfum",
+      "gourmand"
+    ],
+    "gender_profile": "for_her",
+    "oil_concentration_percent": 25,
+    "price": 695,
+    "mrp": 1000,
+    "size_ml": 100,
+    "short_description": "A sweet & edible mix of berries, lilac, and vanilla. Sweet with a sinful twist.",
+    "vibe_tags": [
+      "sweet",
+      "gourmand",
+      "flirty",
+      "playful",
+      "cozy"
+    ],
+    "occasion_tags": [
+      "casual",
+      "date",
+      "daily_wear"
+    ],
+    "season_tags": [
+      "winter",
+      "autumn"
+    ],
+    "notes": {
+      "head": [
+        "Raspberry",
+        "Blackberry",
+        "Sour Cherry"
+      ],
+      "heart": [
+        "Violet",
+        "Jasmine",
+        "Lilac"
+      ],
+      "base": [
+        "Musk",
+        "Vanilla"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/11_b590428f-b9ee-4728-86a4-83d7c637bf52.jpg?v=1761642714",
+    "product_url": "https://blabliblulife.com/products/be-my-cookie-perfume-for-women",
+    "add_to_cart_url": "/cart/add?id=50151100809511",
+    "reviews_count": 85,
+    "positioning_line": "Cozy. Playful. Flirty.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "vetiver_oud_100",
+    "handle": "vetiver-oud",
+    "name": "Vetiver Oud - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "oud",
+      "unisex",
+      "habibi_series"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 795,
+    "mrp": 1100,
+    "size_ml": 100,
+    "short_description": "An earthy & grounded blend of Moroccan rose, amber, and oud. Untamed, earthy, magnetic.",
+    "vibe_tags": [
+      "earthy",
+      "woody",
+      "ancient",
+      "cryptic",
+      "grounded"
+    ],
+    "occasion_tags": [
+      "special_occasion",
+      "evening",
+      "formal"
+    ],
+    "season_tags": [
+      "winter",
+      "autumn"
+    ],
+    "notes": {
+      "head": [
+        "Moroccan Rose",
+        "Saffron"
+      ],
+      "heart": [
+        "Jasmine",
+        "Lily"
+      ],
+      "base": [
+        "Vetiver",
+        "Musk",
+        "Amber",
+        "Oud"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/8_3fb29c77-cfd2-4494-b7ec-d9ba261dd4ad.jpg?v=1761642180",
+    "product_url": "https://blabliblulife.com/products/vetiver-oud",
+    "add_to_cart_url": "/cart/add?id=50151110967591",
+    "reviews_count": 124,
+    "positioning_line": "Cryptic. Ancient. Sacred.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "oud_honey_100",
+    "handle": "oud-honey",
+    "name": "Oud Honey - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "oud",
+      "unisex",
+      "habibi_series"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 795,
+    "mrp": 1100,
+    "size_ml": 100,
+    "short_description": "A sweet & woody texture with a delicate symphony of honey, shamama, and oud. Warmth that lingers.",
+    "vibe_tags": [
+      "sweet",
+      "woody",
+      "warm",
+      "bewitching",
+      "compulsive"
+    ],
+    "occasion_tags": [
+      "evening",
+      "date_night",
+      "winter_wear"
+    ],
+    "season_tags": [
+      "winter",
+      "autumn"
+    ],
+    "notes": {
+      "head": [
+        "Honey"
+      ],
+      "heart": [
+        "Floral Shamama"
+      ],
+      "base": [
+        "Oud",
+        "Sweet Woody"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/7_3c165103-1f04-40c3-a5b0-4df9b0d62046.jpg?v=1761641972",
+    "product_url": "https://blabliblulife.com/products/oud-honey",
+    "add_to_cart_url": "/cart/add?id=50151111721255",
+    "reviews_count": 92,
+    "positioning_line": "Compulsive. Bewitching. Ravish.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "golden_oud_100",
+    "handle": "golden-oud",
+    "name": "Golden Oud - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "oud",
+      "unisex",
+      "habibi_series"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 845,
+    "mrp": 1100,
+    "size_ml": 100,
+    "short_description": "A regal & bold mix of nutmeg, saffron, and oud. Royal by nature. Ruthless by choice.",
+    "vibe_tags": [
+      "regal",
+      "bold",
+      "royal",
+      "ruthless",
+      "luxury"
+    ],
+    "occasion_tags": [
+      "wedding",
+      "gala",
+      "formal"
+    ],
+    "season_tags": [
+      "winter",
+      "special_events"
+    ],
+    "notes": {
+      "head": [
+        "Lavender",
+        "Saffron",
+        "Nutmeg"
+      ],
+      "heart": [
+        "Agarwood (Oud)"
+      ],
+      "base": [
+        "Patchouli",
+        "Musk"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/Golden_Oud_a0841632-810c-4517-8115-7c445716906b.jpg?v=1761643780",
+    "product_url": "https://blabliblulife.com/products/golden-oud",
+    "add_to_cart_url": "/cart/add?id=50151104872743",
+    "reviews_count": 92,
+    "positioning_line": "Royal. Ruthless. Winner.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "ivory_oud_100",
+    "handle": "ivory-oud",
+    "name": "Ivory Oud - 100ml",
+    "category": "Parfum - 100ml",
+    "collection_tags": [
+      "oud",
+      "unisex",
+      "habibi_series"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 695,
+    "mrp": 1100,
+    "size_ml": 100,
+    "short_description": "A minimal & musky fragrance of geranium, patchouli, and oud. Loud in the most silent way.",
+    "vibe_tags": [
+      "minimal",
+      "musky",
+      "innocent",
+      "calm",
+      "pure"
+    ],
+    "occasion_tags": [
+      "daily_wear",
+      "office",
+      "casual"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Geranium"
+      ],
+      "heart": [
+        "Cedarwood",
+        "Patchouli",
+        "Rose"
+      ],
+      "base": [
+        "Ambergris",
+        "Musky Oud"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/Ivory_Oud_dc9364d3-f3ed-4570-b50e-16a93741f922.jpg?v=1761643977",
+    "product_url": "https://blabliblulife.com/products/ivory-oud",
+    "add_to_cart_url": "/cart/add?id=50151114342695",
+    "reviews_count": 83,
+    "positioning_line": "Innocent. Pure. Calm.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "pack_for_him_trial",
+    "handle": "for-him",
+    "name": "Pack For Him - 7ml X 6 Parfums",
+    "category": "Trial Set",
+    "collection_tags": [
+      "trial_pack",
+      "men",
+      "gift_set"
+    ],
+    "gender_profile": "for_him",
+    "oil_concentration_percent": 25,
+    "price": 399,
+    "mrp": 399,
+    "size_ml": 42,
+    "short_description": "Game Changer Set containing 6 x 7ml Parfums including Old Money, By the Beach, My Wingman, Selfmade, Love Drunk, and Lights Off.",
+    "vibe_tags": [
+      "discovery",
+      "variety",
+      "travel_friendly"
+    ],
+    "occasion_tags": [
+      "gifting",
+      "travel",
+      "sampling"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Various"
+      ],
+      "heart": [
+        "Various"
+      ],
+      "base": [
+        "Various"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/1_3.jpg?v=1758016322",
+    "product_url": "https://blabliblulife.com/products/for-him",
+    "add_to_cart_url": "/cart/add?id=50178246017319",
+    "reviews_count": 361,
+    "positioning_line": "Six variants. One box. Zero apologies.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "pack_for_her_trial",
+    "handle": "buy-perfume-trial-pack-for-women",
+    "name": "Pack For Her- 7ml X 6 Parfums",
+    "category": "Trial Set",
+    "collection_tags": [
+      "trial_pack",
+      "women",
+      "gift_set"
+    ],
+    "gender_profile": "for_her",
+    "oil_concentration_percent": 25,
+    "price": 399,
+    "mrp": 399,
+    "size_ml": 42,
+    "short_description": "Game Changer Set containing 6 x 7ml Parfums including Peaches, White Jazz, Hot AF, Be My Cookie, Love Drunk, and Lights Off.",
+    "vibe_tags": [
+      "discovery",
+      "variety",
+      "travel_friendly"
+    ],
+    "occasion_tags": [
+      "gifting",
+      "travel",
+      "sampling"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Various"
+      ],
+      "heart": [
+        "Various"
+      ],
+      "base": [
+        "Various"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/1_b80dcf18-789d-4914-801d-b3a7ee5e8dd9.jpg?v=1758010956",
+    "product_url": "https://blabliblulife.com/products/buy-perfume-trial-pack-for-women",
+    "add_to_cart_url": "/cart/add?id=50178244346151",
+    "reviews_count": 181,
+    "positioning_line": "Six blends. All fire. No filler.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "oud_collection_trial",
+    "handle": "habibi",
+    "name": "Oud Collection Unisex - 7ml X 6 Parfum",
+    "category": "Trial Set",
+    "collection_tags": [
+      "trial_pack",
+      "oud",
+      "unisex",
+      "gift_set"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 449,
+    "mrp": 449,
+    "size_ml": 42,
+    "short_description": "Game Changer Set containing 6 x 7ml Parfums including Golden Oud, Vetiver Oud, Oud Honey, Ivory Oud, Love Drunk, and Lights Off.",
+    "vibe_tags": [
+      "discovery",
+      "oud",
+      "exotic",
+      "variety"
+    ],
+    "occasion_tags": [
+      "gifting",
+      "travel",
+      "sampling"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Various"
+      ],
+      "heart": [
+        "Various"
+      ],
+      "base": [
+        "Various"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/1_1.jpg?v=1758012465",
+    "product_url": "https://blabliblulife.com/products/habibi",
+    "add_to_cart_url": "/cart/add?id=50178257223975",
+    "reviews_count": 172,
+    "positioning_line": "Six scents. Four Ouds. Two contrasts.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "ultimate_experience_set",
+    "handle": "bla-bli-blu-ultimate-experience-set",
+    "name": "Bla Bli Blu Ultimate Experience Set",
+    "category": "Trial Set",
+    "collection_tags": [
+      "trial_pack",
+      "combo",
+      "gift_set"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 999,
+    "mrp": 1247,
+    "size_ml": 126,
+    "short_description": "A comprehensive collection containing one each of the Men's, Women's, and Oud Unisex trial sets.",
+    "vibe_tags": [
+      "ultimate",
+      "complete",
+      "variety"
+    ],
+    "occasion_tags": [
+      "gifting",
+      "discovery"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Various"
+      ],
+      "heart": [
+        "Various"
+      ],
+      "base": [
+        "Various"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/1_2.jpg?v=1758013115",
+    "product_url": "https://blabliblulife.com/products/bla-bli-blu-ultimate-experience-set",
+    "add_to_cart_url": "/cart/add?id=50379513233703",
+    "reviews_count": 12,
+    "positioning_line": "Not just a trial, a journey.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "gift_set_men_3x30",
+    "handle": "perfume-gift-set-for-men",
+    "name": "Bla Bli Blu Gift Set For Men - 3 x 30ml",
+    "category": "Gift Set",
+    "collection_tags": [
+      "gift_set",
+      "men",
+      "miniature"
+    ],
+    "gender_profile": "for_him",
+    "oil_concentration_percent": 25,
+    "price": 850,
+    "mrp": 1200,
+    "size_ml": 90,
+    "short_description": "Three killer blends of power, charm, and adventure: Old Money, My Wingman, and By the Beach.",
+    "vibe_tags": [
+      "gift",
+      "variety",
+      "masculine"
+    ],
+    "occasion_tags": [
+      "gifting",
+      "travel"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Various"
+      ],
+      "heart": [
+        "Various"
+      ],
+      "base": [
+        "Various"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/For_Him.jpg?v=1759310614",
+    "product_url": "https://blabliblulife.com/products/perfume-gift-set-for-men",
+    "add_to_cart_url": "/cart/add?id=50472291107111",
+    "reviews_count": 62,
+    "positioning_line": "Three moods. Masculine fire. Zero compromise.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "gift_set_women_3x30",
+    "handle": "perfume-gift-set-for-women",
+    "name": "Bla Bli Blu Gift Set For Women - 3 x 30ml",
+    "category": "Gift Set",
+    "collection_tags": [
+      "gift_set",
+      "women",
+      "miniature"
+    ],
+    "gender_profile": "for_her",
+    "oil_concentration_percent": 25,
+    "price": 850,
+    "mrp": 1200,
+    "size_ml": 90,
+    "short_description": "Three intoxicating blends of jasmine, blackcurrant, and vanilla: White Jazz, Hot AF, and Be My Cookie.",
+    "vibe_tags": [
+      "gift",
+      "variety",
+      "feminine"
+    ],
+    "occasion_tags": [
+      "gifting",
+      "travel"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Various"
+      ],
+      "heart": [
+        "Various"
+      ],
+      "base": [
+        "Various"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/1_white_bg_for_her.png?v=1760515721",
+    "product_url": "https://blabliblulife.com/products/perfume-gift-set-for-women",
+    "add_to_cart_url": "/cart/add?id=50472344748327",
+    "reviews_count": 44,
+    "positioning_line": "One box. Sharp fire. No rules.",
+    "availability": "in_stock"
+  },
+  {
+    "id": "oud_unisex_gift_set_3x30",
+    "handle": "oud-unisex-perfume-gift-set",
+    "name": "Oud Unisex Perfume Gift Set For Men & Women - 3 x 30ml",
+    "category": "Gift Set",
+    "collection_tags": [
+      "gift_set",
+      "oud",
+      "unisex"
+    ],
+    "gender_profile": "unisex",
+    "oil_concentration_percent": 25,
+    "price": 900,
+    "mrp": 1300,
+    "size_ml": 90,
+    "short_description": "This unisex Oud perfume gift set blends nutmeg, moroccan rose, and honey into exotic aromas.",
+    "vibe_tags": [
+      "gift",
+      "variety",
+      "exotic",
+      "oud"
+    ],
+    "occasion_tags": [
+      "gifting",
+      "travel"
+    ],
+    "season_tags": [
+      "all_season"
+    ],
+    "notes": {
+      "head": [
+        "Various"
+      ],
+      "heart": [
+        "Various"
+      ],
+      "base": [
+        "Various"
+      ]
+    },
+    "image_url": "https://blabliblulife.com/cdn/shop/files/oud-unisex-gift-set-02.jpg?v=1761817656",
+    "product_url": "https://blabliblulife.com/products/oud-unisex-perfume-gift-set",
+    "add_to_cart_url": "/cart/add?id=50606027178279",
+    "reviews_count": 10,
+    "positioning_line": "One box. Three scents. Infinite swagger.",
+    "availability": "in_stock"
+  }
+]
