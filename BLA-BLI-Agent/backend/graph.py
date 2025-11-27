@@ -135,24 +135,49 @@ def intent_router(state: ChatState):
         is_button_answer = False
         
         if awaiting_choice == "byob_selection":
-            # If we're awaiting BYOB selection, preserve build_own_box intent
-            # User might be clicking a product button or typing a product name
-            if last_intent == "build_own_box":
+            # If we're awaiting BYOB selection, check if user is actually selecting a product
+            # or asking a different question (like "when to wear", "what is the price")
+            # Check for non-BYOB question patterns that should break out of BYOB flow
+            non_byob_patterns = [
+                "what is", "what's", "how much", "tell me", "when", "wear", "occasion",
+                "i want to buy", "i want a", "find", "looking for", "recommend", "suggest", 
+                "gift", "track", "order", "notes", "what do i get", "contents"
+            ]
+            is_non_byob_question = any(pattern in user_msg_lower for pattern in non_byob_patterns)
+            
+            # Only continue BYOB intent if it looks like a product selection, not a general question
+            if last_intent == "build_own_box" and not is_non_byob_question:
                 logger.info("node=intent_router continuing_intent=build_own_box awaiting=byob_selection")
                 state["intent"] = "build_own_box"
                 return state
+            elif is_non_byob_question:
+                # User is asking a different question, clear awaiting_choice and re-detect intent
+                logger.info("node=intent_router breaking_out_of_byob user_asked_different_question=1")
+                state["awaiting_choice"] = None
+                # Don't return here, let the intent be re-detected below
         elif awaiting_choice == "gender" and any(word in user_msg_lower for word in ["for him", "for her", "unisex", "men's", "women's"]):
             is_button_answer = True
         elif awaiting_choice == "vibe" and any(word in user_msg_lower for word in ["fresh", "sweet", "spicy", "oud", "floral", "woody", "breezy", "gourmand", "cozy", "earthy"]):
             is_button_answer = True
         elif awaiting_choice == "occasion" and any(word in user_msg_lower for word in ["daily", "office", "date night", "party", "mixed", "casual", "formal"]):
             is_button_answer = True
-        elif awaiting_choice == "budget" and any(word in user_msg_lower for word in ["under", "700", "900", "no limit", "any", "₹"]):
+        elif awaiting_choice == "budget" and any(word in user_msg_lower for word in ["under", "above", "over", "700", "900", "500", "no limit", "any", "₹"]):
             is_button_answer = True
         
         if is_button_answer and last_intent in ("find_perfume", "product_recommendation", "gift_recommendation"):
             logger.info("node=intent_router continuing_intent=%s awaiting=%s detected_button_answer=1", last_intent, awaiting_choice)
             state["intent"] = last_intent
+            return state
+    
+    # Also check if user is changing preferences after "no recommendations" scenario
+    # Detect button actions like "Above ₹500", "Office/Formal", etc.
+    if any(phrase in user_msg_lower for phrase in ["above ₹", "under ₹", "office/formal", "daily/casual"]):
+        last_intent = state.get("intent")
+        if last_intent in ("find_perfume", "product_recommendation", "gift_recommendation"):
+            logger.info("node=intent_router detected_preference_change continuing_intent=%s", last_intent)
+            state["intent"] = last_intent
+            # Clear awaiting_choice so preferences are re-extracted
+            state["awaiting_choice"] = None
             return state
     
     direct_intent_map = {
@@ -182,32 +207,54 @@ def intent_router(state: ChatState):
             logger.info("node=intent_router direct_map_intent=%s", mapped_intent)
             return state
     
-    # Check if this is a product question about the last recommended product
+    # Check if this is a product question about a specific product (with or without last recommendations)
     has_last_recs = bool(state.get("last_recommendations"))
-    if has_last_recs:
-        # Common product question patterns
-        product_question_patterns = [
-            "what is the price", "what is its price", "how much", "what's the price",
-            "what do i get", "what's in it", "what comes with", "contents",
-            "when can i wear", "when to wear", "when should i wear", "suitable for",
-            "what occasion", "what notes", "tell me more", "more about",
-        ]
-        if any(pattern in user_msg_lower for pattern in product_question_patterns):
-            state["intent"] = "product_question"
-            logger.info("node=intent_router direct_map_product_question=1")
-            return state
+    
+    # Common product question patterns
+    product_question_patterns = [
+        "what is the price", "what is its price", "how much", "what's the price",
+        "what do i get", "what's in it", "what comes with", "contents",
+        "when can i wear", "when to wear", "when should i wear", "suitable for",
+        "what occasion", "what notes", "what nodes", "notes in", "nodes in",
+        "fragrance notes", "tell me more", "more about",
+    ]
+    
+    # Check if user is asking about product details
+    is_product_question = any(pattern in user_msg_lower for pattern in product_question_patterns)
+    
+    # Also check if user mentions a specific product name (even without last_recs)
+    # This handles cases like "what notes are in love drunk" when product wasn't recommended
+    has_product_name_mention = any(word.istitle() or len(word) > 4 for word in last_user_msg.split() 
+                                     if word.lower() not in ["what", "notes", "nodes", "price", "present", "about"])
+    
+    if is_product_question and (has_last_recs or has_product_name_mention):
+        state["intent"] = "product_question"
+        logger.info("node=intent_router direct_map_product_question=1 has_last_recs=%s has_name=%s", 
+                   has_last_recs, has_product_name_mention)
+        return state
     
     # Check if user is asking about previously recommended products
     # This helps improve intent detection for product_question
     
     # Construct prompt with context
     prompt = INTENT_PROMPT
+    
+    # Pass current intent and state to help LLM preserve context
+    current_intent = state.get("intent")
+    awaiting = state.get("awaiting_choice")
+    if current_intent:
+        prompt += f"\n\nCurrent Intent: {current_intent}"
+    if awaiting:
+        prompt += f"\nCurrently asking user for: {awaiting}"
+    
     if last_assistant_msg:
-        prompt += f"\nAssistant asked: {last_assistant_msg}"
+        prompt += f"\nAssistant's last message: {last_assistant_msg}"
     
     if has_last_recs:
-        # Add context to help intent detection
-        prompt += f"\nContext: Products were just recommended."
+        # Add context about recommended products to help intent detection
+        last_recs = state.get("last_recommendations", [])
+        product_names = [p.get("name", "") for p in last_recs[:3]]  # Show up to 3 products
+        prompt += f"\nContext: Products just recommended: {', '.join(product_names)}"
         
     prompt += f"\nUser: {last_user_msg}"
     
@@ -294,8 +341,9 @@ def collect_preferences(state: ChatState):
     # This handles cases where user types instead of clicking buttons
     awaiting_choice = state.get("awaiting_choice")
     
-    if awaiting_choice == "gender" and not prefs.get("gender"):
-        # User was asked about gender, detect their answer
+    if awaiting_choice == "gender":
+        # User was asked about gender or is updating gender
+        # Allow updates even if gender is already set (user can change their mind)
         # Check for specific gender terms first (more specific patterns win)
         if any(word in last_user_msg_lower for word in ["men's", "mens", "for him", "male perfume", "man's", "guy's"]):
             prefs["gender"] = "for_him"
@@ -314,8 +362,9 @@ def collect_preferences(state: ChatState):
             prefs["gender"] = "for_her"
             logger.info("node=collect_preferences direct_detect_gender=for_her (generic)")
     
-    if awaiting_choice == "vibe" and not prefs.get("scent_types"):
-        # User was asked about vibe/scent
+    if awaiting_choice == "vibe":
+        # User was asked about vibe/scent or is updating vibe
+        # Allow updates even if vibe is already set (user can change their mind)
         vibe_map = {
             "fresh": ["fresh", "breezy", "citrus", "clean"],
             "sweet": ["sweet", "gourmand", "vanilla", "honey"],
@@ -330,10 +379,11 @@ def collect_preferences(state: ChatState):
                 logger.info("node=collect_preferences direct_detect_vibe=%s", vibe_type)
                 break
     
-    if awaiting_choice == "occasion" and not prefs.get("occasions"):
-        # User was asked about occasion
+    if awaiting_choice == "occasion":
+        # User was asked about occasion or is updating occasion
+        # Allow updates even if occasion is already set (user can change their mind)
         occasion_map = {
-            "casual": ["daily", "everyday", "casual"],
+            "casual": ["daily", "everyday", "casual", "vacation", "holiday", "trip"],
             "formal": ["office", "work", "formal", "business", "wedding", "ceremony", "function", "event"],
             "date_night": ["date", "romantic", "date night"],
             "party": ["party", "night", "clubbing"],
@@ -350,24 +400,73 @@ def collect_preferences(state: ChatState):
                 logger.info("node=collect_preferences direct_detect_occasion=%s raw=%s", occ_type, prefs.get("occasion_raw"))
                 break
     
-    if awaiting_choice == "budget" and not prefs.get("budget"):
-        # User was asked about budget
+    # Handle budget updates (both when awaiting and when user spontaneously changes)
+    if awaiting_choice == "budget" or any(word in last_user_msg_lower for word in ["budget", "above", "under", "over", "₹"]):
+        # User was asked about budget or is updating budget preference
+        # Allow updates even if budget is already set (user can change their mind)
+        budget_updated = False
+        
         if "under" in last_user_msg_lower and "700" in last_user_msg_lower:
             prefs["budget"] = {"amount": 700, "operator": "under"}
             logger.info("node=collect_preferences direct_detect_budget=under_700")
+            budget_updated = True
+        elif ("above" in last_user_msg_lower or "over" in last_user_msg_lower or "more than" in last_user_msg_lower):
+            # Extract amount dynamically
+            import re
+            amount_match = re.search(r'(\d+)', last_user_msg_lower)
+            if amount_match:
+                amount = int(amount_match.group(1))
+                prefs["budget"] = {"amount": amount, "operator": "over"}
+                logger.info("node=collect_preferences direct_detect_budget=above_%d", amount)
+                budget_updated = True
+        elif ("below" in last_user_msg_lower or "under" in last_user_msg_lower or "less than" in last_user_msg_lower):
+            # Extract amount dynamically for "below X" patterns
+            import re
+            amount_match = re.search(r'(\d+)', last_user_msg_lower)
+            if amount_match:
+                amount = int(amount_match.group(1))
+                prefs["budget"] = {"amount": amount, "operator": "under"}
+                logger.info("node=collect_preferences direct_detect_budget=below_%d", amount)
+                budget_updated = True
         elif "700" in last_user_msg_lower and "900" in last_user_msg_lower:
             prefs["budget"] = {"amount": 800, "operator": "around"}
             logger.info("node=collect_preferences direct_detect_budget=700_900")
-        elif "no limit" in last_user_msg_lower or "any" in last_user_msg_lower:
+            budget_updated = True
+        elif "no limit" in last_user_msg_lower or ("any" in last_user_msg_lower and ("budget" in last_user_msg_lower or awaiting_choice == "budget")):
             prefs["budget"] = None  # No budget constraint
             logger.info("node=collect_preferences direct_detect_budget=no_limit")
+            budget_updated = True
+        
+        # Mark budget as asked if it was updated
+        if budget_updated and "budget" not in state.get("questions_asked", []):
+            questions_asked = state.get("questions_asked", [])
+            questions_asked.append("budget")
+            state["questions_asked"] = questions_asked
 
     # Use LLM to extract preferences from context (Smart extraction)
     try:
+        # Pass current preferences to LLM so it doesn't lose context
+        current_prefs_str = f"""
+Current preferences already set:
+- Gender: {prefs.get('gender', 'not set')}
+- Is Gift: {prefs.get('is_gift', False)}
+- Scent Types: {prefs.get('scent_types', [])}
+- Budget: {prefs.get('budget', 'not set')}
+- Occasions: {prefs.get('occasions', [])}
+
+IMPORTANT: Only update fields that are EXPLICITLY mentioned in the latest user message.
+If user only mentions budget (e.g., "under 500"), keep all other fields unchanged.
+Preserve is_gift and gender unless user explicitly changes them.
+"""
+        
         llm_prompt = f"""{PREFERENCE_EXTRACTION_PROMPT}
+
+{current_prefs_str}
 
 Conversation Context:
 {context_text}
+
+Latest User Message: {last_user_msg}
 """
         llm_response = _call_llm(llm_prompt)
         # Clean up response to ensure it's valid JSON
@@ -380,29 +479,55 @@ Conversation Context:
         import json
         extracted_prefs = json.loads(llm_response)
         
-        # Merge extracted prefs into existing prefs
+        # Merge extracted prefs into existing prefs - PRESERVE CONTEXT
+        # Only update fields that are explicitly mentioned in the latest message
         if extracted_prefs.get("gender"):
-            prefs["gender"] = extracted_prefs["gender"]
+            # Only update gender if:
+            # 1. Gender is not already set (new selection), OR
+            # 2. User explicitly changed gender (detected a DIFFERENT gender than existing)
+            # BUT: Don't change gender if user is just providing budget/vibe/occasion
+            if not prefs.get("gender"):
+                # No gender set yet, accept the new one
+                prefs["gender"] = extracted_prefs["gender"]
+                logger.info("node=collect_preferences llm_gender_set=%s (new)", extracted_prefs["gender"])
+            elif extracted_prefs.get("gender") != prefs.get("gender"):
+                # Gender is changing - only update if user explicitly mentioned gender terms
+                # Check if the latest message actually mentions gender (not just inferred)
+                gender_terms = ["for him", "for her", "men", "women", "male", "female", "unisex", "boy", "girl", "guy", "lady"]
+                if any(term in last_user_msg_lower for term in gender_terms):
+                    prefs["gender"] = extracted_prefs["gender"]
+                    logger.info("node=collect_preferences llm_gender_changed from=%s to=%s", prefs.get("gender"), extracted_prefs["gender"])
+                else:
+                    # User didn't explicitly mention gender, keep existing
+                    logger.info("node=collect_preferences llm_gender_preserved=%s (not explicitly mentioned)", prefs.get("gender"))
         
         if extracted_prefs.get("scent_types"):
-            existing_scents = prefs.get("scent_types", [])
-            new_scents = extracted_prefs["scent_types"]
-            prefs["scent_types"] = list(set(existing_scents + new_scents))
+            # If user is changing scent type (new message has scent), replace instead of merge
+            # Check if this is a fresh scent selection or an addition
+            if len(extracted_prefs["scent_types"]) > 0:
+                # If user explicitly mentions a scent in latest message, it's likely a change
+                # Replace instead of merge to avoid confusion
+                prefs["scent_types"] = extracted_prefs["scent_types"]
             
         if extracted_prefs.get("budget"):
+            # Always trust LLM for budget - if user mentions budget, they want to change it
             prefs["budget"] = extracted_prefs["budget"]
+            logger.info("node=collect_preferences llm_budget_updated amount=%s operator=%s", 
+                       extracted_prefs["budget"].get("amount"), extracted_prefs["budget"].get("operator"))
             
         if extracted_prefs.get("is_gift") is not None:
-            # Only update is_gift if explicitly detected
-            # But respect the "single perfume" override from recommender if present
-            # We'll let recommender logic handle the fine-grained is_gift logic
-            # just set it here if true
-            if extracted_prefs["is_gift"]:
-                prefs["is_gift"] = True
-            elif extracted_prefs["is_gift"] is False:
-                 # If LLM explicitly says not a gift, we might want to trust it
-                 # But let's be careful not to override previous "true" unless sure
-                 pass
+            # Only update is_gift if it's explicitly mentioned in latest message
+            # If is_gift is already True (from previous context), preserve it unless user explicitly says otherwise
+            if prefs.get("is_gift") is True:
+                # Already a gift - only change if user explicitly says it's NOT a gift
+                # (which is rare - usually they just mention budget/preferences)
+                # So we preserve the gift status
+                pass
+            else:
+                # Not yet marked as gift - trust LLM if it detects gift intent
+                if extracted_prefs["is_gift"]:
+                    prefs["is_gift"] = True
+                    logger.info("node=collect_preferences llm_gift_detection is_gift=%s", extracted_prefs["is_gift"])
 
         if extracted_prefs.get("specific_notes"):
             existing_notes = prefs.get("specific_notes", [])
@@ -726,227 +851,500 @@ def response_node(state: ChatState):
 
     # Handle questions about recommended products
     if intent == "product_question":
-        last_recs = state.get("last_recommendations", [])
-        if last_recs:
-            # Extract information directly from product data to avoid LLM hallucination
-            user_text_lower = user_text.lower()
-            
-            # Check if user is asking for NEW recommendations based on specific notes or product type
-            # Patterns like "with lemon", "anything with rose", "single product not package"
-            note_request_patterns = [
-                "with ", "anything with", "something with", "perfume with",
-                "that has", "which has", "containing"
-            ]
-            is_note_request = any(pattern in user_text_lower for pattern in note_request_patterns)
-            
-            # Check if user is changing product type (single product vs package/gift set)
-            single_product_patterns = [
-                "single product", "single perfume", "single bottle", "individual product",
-                "not package", "no package", "not a package", "not collection", "no collection"
-            ]
-            package_patterns = [
-                "package", "collection", "gift set", "set", "bundle"
-            ]
-            is_single_product_request = any(pattern in user_text_lower for pattern in single_product_patterns)
-            is_package_request = any(pattern in user_text_lower for pattern in package_patterns) and not is_single_product_request
-            
-            # If user is asking for products with specific notes or changing product type, treat as new product_recommendation
-            if is_note_request or is_single_product_request or is_package_request:
-                # Re-route to product_recommendation flow to find new matches
-                state["intent"] = "product_recommendation"
-                logger.info("node=response re_routing_note_request_to_recommendation")
-                # Let the recommendation flow handle this
-                # Clear awaiting_choice to start fresh
-                state["awaiting_choice"] = None
-                # Continue to product_recommendation flow below
-                intent = "product_recommendation"
-            else:
-                # Try to find product by name if mentioned
-                product = None
+        last_recs = state.get("last_recommendations", []) or []
+        user_text_lower = user_text.lower()
+        
+        # Check if user is asking for NEW recommendations based on specific notes or product type
+        # Patterns like "with lemon", "anything with rose", "single product not package"
+        note_request_patterns = [
+            "with ", "anything with", "something with", "perfume with",
+            "that has", "which has", "containing"
+        ]
+        is_note_request = any(pattern in user_text_lower for pattern in note_request_patterns)
+        
+        # Check if user is changing product type (single product vs package/gift set)
+        single_product_patterns = [
+            "single product", "single perfume", "single bottle", "individual product",
+            "not package", "no package", "not a package", "not collection", "no collection"
+        ]
+        package_patterns = [
+            "package", "collection", "gift set", "set", "bundle"
+        ]
+        is_single_product_request = any(pattern in user_text_lower for pattern in single_product_patterns)
+        is_package_request = any(pattern in user_text_lower for pattern in package_patterns) and not is_single_product_request
+        
+        # If user is asking for products with specific notes or changing product type, treat as new product_recommendation
+        if is_note_request or is_single_product_request or is_package_request:
+            # Re-route to product_recommendation flow to find new matches
+            state["intent"] = "product_recommendation"
+            logger.info("node=response re_routing_note_request_to_recommendation")
+            # Let the recommendation flow handle this
+            # Clear awaiting_choice to start fresh
+            state["awaiting_choice"] = None
+            # Continue to product_recommendation flow below
+            intent = "product_recommendation"
+        else:
+            # Try to find product by name if mentioned - first check in last_recs
+            product = None
+            if last_recs:
                 for rec in last_recs:
                     rec_name = rec.get("name", "").lower()
-                    # Check if product name is mentioned in user text
-                    if rec_name and any(word in user_text_lower for word in rec_name.split()):
+                    # Check if product name is mentioned in user text (match significant words, not common words)
+                    rec_words = [w for w in rec_name.split() if len(w) > 2 and w not in ["the", "and", "for"]]
+                    if rec_name and any(word in user_text_lower for word in rec_words):
                         product = rec
                         break
+            
+            # If product not found in last_recs, search entire product catalog
+            if not product:
+                # Extract potential product names from user query
+                # Try to match against full product catalog
+                product = get_product_by_name(user_text)
+                if product:
+                    logger.info("node=response found_product_in_catalog product_name=%s", product.get("name"))
+                    # Add to last_recommendations so it can be referenced
+                    state["last_recommendations"] = [product]
+                    last_recs = [product]
+            
+            # Don't auto-select first product - let each handler decide what to do when product is None
+            
+            # Handle price questions
+            if any(word in user_text_lower for word in ["price", "cost", "how much"]):
+                # Check if multiple products in context and no specific product mentioned
+                if len(last_recs) > 1 and not product:
+                    # Ask LLM to determine if user is asking about total or specific product
+                    import json
+                    products_list = [p.get("name", "") for p in last_recs]
+                    llm_prompt = f"""User has these products in context: {', '.join(products_list)}
+User asked: "{user_text}"
+
+Is the user asking about:
+A) The total price of all products combined (phrases like "all of them", "all", "total", "everything", "combined")
+B) The price of a specific product (mention which one if they specified)
+C) Need clarification (they said "the price" without specifying which)
+
+Reply with only 'TOTAL', the specific product name, or 'CLARIFY'."""
+                    
+                    llm_decision = _call_llm(llm_prompt).strip()
+                    
+                    if llm_decision == "TOTAL":
+                        # Calculate and show total price
+                        total_price = sum(p.get("price", 0) for p in last_recs)
+                        product_names = [p.get("name", "") for p in last_recs]
+                        reply = f"Your custom box includes {len(last_recs)} perfumes: {', '.join(product_names)}. Total price: ₹{total_price}. Want to see it or explore other options?"
+                        
+                        # Add BYOB page button for total price
+                        buttons = [{"label": "View BYOB Page", "action": "open_url:https://blabliblulife.com/pages/build-your-own-box", "type": "success"}]
+                        state["button_suggestions"] = buttons
+                        state["messages"].append({"role": "assistant", "content": reply})
+                        logger.info("node=response answered_total_price multiple_products=%d total=%d", len(last_recs), total_price)
+                        return state
+                    elif llm_decision == "CLARIFY":
+                        # Ask for clarification with buttons
+                        product_names = [p.get("name", "") for p in last_recs]
+                        reply = f"Which perfume are you asking about? You have: {', '.join(product_names)}."
+                        
+                        # Add buttons for each product
+                        buttons = []
+                        for product in last_recs:
+                            product_name = product.get("name", "")
+                            if product_name:
+                                buttons.append({"label": product_name, "action": f"select_product:{product.get('id')}", "type": "primary"})
+                        
+                        # Add "All of them" option
+                        if len(last_recs) > 1:
+                            buttons.append({"label": "All of them", "action": "select_product:all", "type": "secondary"})
+                        
+                        state["button_suggestions"] = buttons
+                        state["messages"].append({"role": "assistant", "content": reply})
+                        logger.info("node=response asking_which_product_for_price multiple_products=%d buttons=%d", len(last_recs), len(buttons))
+                        return state
+                    else:
+                        # Try to find the mentioned product
+                        for rec in last_recs:
+                            if rec.get("name", "").lower() in llm_decision.lower():
+                                product = rec
+                                break
                 
-                # If no specific product found, use first one
+                # Fallback to first product if still None
+                if not product:
+                    if last_recs:
+                        product = last_recs[0]
+                    else:
+                        # No product found at all
+                        reply = "I'm not sure which perfume you're asking about. Could you tell me the product name, or would you like me to recommend something?"
+                        state["messages"].append({"role": "assistant", "content": reply})
+                        logger.info("node=response price_question_no_product=1")
+                        return state
+                
+                price = product.get("price", 0)
+                name = product.get("name", "this product")
+                if price:
+                    reply = f"The price of {name} is ₹{price}. Want to see it or explore other options?"
+                else:
+                    reply = f"I don't have the price information for {name} right now. Can I help you with anything else?"
+                
+                # Add action buttons
+                buttons = []
+                product_url = product.get("product_url", "")
+                if product_url:
+                    buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
+                
+                # Add other options button if more recommendations available
+                current_index = state.get("recommendation_index", 0)
+                remaining = len(last_recs) - current_index - 1
+                if remaining > 0:
+                    buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
+                
+                # Add safer/bolder buttons
+                current_price = product.get("price", 0)
+                safer_exists = any(p.get("price", 0) < current_price for p in last_recs if p.get("id") != product.get("id"))
+                if safer_exists:
+                    buttons.append({"label": "Show Safer Option", "action": "show_safer", "type": "secondary"})
+                
+                bolder_exists = any(p.get("price", 0) > current_price for p in last_recs if p.get("id") != product.get("id"))
+                if bolder_exists:
+                    buttons.append({"label": "Show Bolder Option", "action": "show_bolder", "type": "secondary"})
+                
+                if buttons:
+                    state["button_suggestions"] = buttons
+                
+                state["messages"].append({"role": "assistant", "content": reply})
+                logger.info("node=response answered_price_question=1 buttons=%d", len(buttons))
+                return state
+            
+            # Handle occasion/when to wear questions
+            if any(phrase in user_text_lower for phrase in ["when", "wear", "occasion", "use", "suitable"]):
+                # Check if multiple products in context and no specific product mentioned
+                if len(last_recs) > 1 and not product:
+                    # Get recent conversation for better context
+                    user_messages = [m["content"] for m in state["messages"] if m["role"] == "user"]
+                    recent_context = " ".join(user_messages[-3:]) if len(user_messages) > 1 else user_text
+                    
+                    import json
+                    products_list = [p.get("name", "") for p in last_recs]
+                    llm_prompt = f"""User has these products in context: {', '.join(products_list)}
+Recent conversation: {recent_context}
+Current question: "{user_text}"
+
+Did the user mention a specific product name in their question? Consider phrases like product names (e.g., "Selfmade", "Lights Off").
+
+Reply with only the specific product name if clearly mentioned, or 'CLARIFY' if no specific product was mentioned."""
+                    
+                    llm_decision = _call_llm(llm_prompt).strip()
+                    
+                    if llm_decision == "CLARIFY":
+                        # Ask for clarification with buttons
+                        product_names = [p.get("name", "") for p in last_recs]
+                        reply = f"Which perfume are you asking about? You have: {', '.join(product_names)}."
+                        
+                        # Add buttons for each product
+                        buttons = []
+                        for product in last_recs:
+                            product_name = product.get("name", "")
+                            if product_name:
+                                buttons.append({"label": product_name, "action": f"select_product:{product.get('id')}", "type": "primary"})
+                        
+                        state["button_suggestions"] = buttons
+                        state["messages"].append({"role": "assistant", "content": reply})
+                        logger.info("node=response asking_which_product_for_occasion multiple_products=%d buttons=%d", len(last_recs), len(buttons))
+                        return state
+                    else:
+                        # Try to find the mentioned product
+                        for rec in last_recs:
+                            if rec.get("name", "").lower() in llm_decision.lower():
+                                product = rec
+                                break
+                        if not product:
+                            product = last_recs[0]
+                
+                # Ensure we have a product selected
+                if not product:
+                    if last_recs:
+                        product = last_recs[0]
+                    else:
+                        reply = "I'm not sure which perfume you're asking about. Could you tell me the product name?"
+                        state["messages"].append({"role": "assistant", "content": reply})
+                        logger.info("node=response occasion_question_no_product=1")
+                        return state
+
+                name = product.get("name", "this product")
+                occasion_tags = product.get("occasion_tags", [])
+                vibe_tags = product.get("vibe_tags", [])
+                
+                reply_parts = [f"{name} is great for"]
+                
+                if occasion_tags:
+                    # Format occasions nicely
+                    occasions = [occ.replace("_", " ") for occ in occasion_tags]
+                    if len(occasions) == 1:
+                        reply_parts.append(occasions[0])
+                    elif len(occasions) == 2:
+                        reply_parts.append(f"{occasions[0]} and {occasions[1]}")
+                    else:
+                        reply_parts.append(f"{', '.join(occasions[:-1])}, and {occasions[-1]}")
+                else:
+                    reply_parts.append("everyday wear")
+                
+                # Add vibe context
+                if vibe_tags:
+                    vibe_desc = ", ".join(vibe_tags[:3])
+                    reply_parts.append(f"It has {vibe_desc} vibes.")
+                
+                reply = " ".join(reply_parts) + " Want to see it or explore other options?"
+                
+                # Add action buttons
+                buttons = []
+                product_url = product.get("product_url", "")
+                if product_url:
+                    buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
+                
+                # Add other options button if more recommendations available
+                current_index = state.get("recommendation_index", 0)
+                remaining = len(last_recs) - current_index - 1
+                if remaining > 0:
+                    buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
+                
+                # Add safer/bolder buttons
+                current_price = product.get("price", 0)
+                current_vibes = product.get("vibe_tags", [])
+                
+                safer_candidates = [
+                    p for p in last_recs 
+                    if p.get("id") != product.get("id") and (
+                        p.get("price", 0) < current_price or
+                        any(v in p.get("vibe_tags", []) for v in ["fresh", "clean", "light", "breezy"])
+                    )
+                ]
+                if safer_candidates:
+                    buttons.append({"label": "Show Safer Option", "action": "show_safer", "type": "secondary"})
+                
+                bolder_candidates = [
+                    p for p in last_recs 
+                    if p.get("id") != product.get("id") and (
+                        p.get("price", 0) > current_price or
+                        any(v in p.get("vibe_tags", []) for v in ["bold", "intense", "strong", "oud", "spicy"])
+                    )
+                ]
+                if bolder_candidates:
+                    buttons.append({"label": "Show Bolder Option", "action": "show_bolder", "type": "secondary"})
+                
+                if buttons:
+                    state["button_suggestions"] = buttons
+                
+                state["messages"].append({"role": "assistant", "content": reply})
+                logger.info("node=response answered_occasion_question=1 buttons=%d", len(buttons))
+                return state
+            
+            # Handle questions about contents/what's included
+            if any(phrase in user_text_lower for phrase in ["what do i get", "what's in", "what is in", "what comes", "contents", "includes"]):
+                # Check if multiple products in context and no specific product mentioned
+                if len(last_recs) > 1 and not product:
+                    # Get recent conversation for better context
+                    user_messages = [m["content"] for m in state["messages"] if m["role"] == "user"]
+                    recent_context = " ".join(user_messages[-3:]) if len(user_messages) > 1 else user_text
+                    
+                    import json
+                    products_list = [p.get("name", "") for p in last_recs]
+                    llm_prompt = f"""User has these products in context: {', '.join(products_list)}
+Recent conversation: {recent_context}
+Current question: "{user_text}"
+
+Did the user mention a specific product name in their question? Consider phrases like product names (e.g., "Selfmade", "Lights Off").
+
+Reply with only the specific product name if clearly mentioned, or 'CLARIFY' if no specific product was mentioned."""
+                    
+                    llm_decision = _call_llm(llm_prompt).strip()
+                    
+                    if llm_decision == "CLARIFY":
+                        # Ask for clarification with buttons
+                        product_names = [p.get("name", "") for p in last_recs]
+                        reply = f"Which perfume are you asking about? You have: {', '.join(product_names)}."
+                        
+                        # Add buttons for each product
+                        buttons = []
+                        for product in last_recs:
+                            product_name = product.get("name", "")
+                            if product_name:
+                                buttons.append({"label": product_name, "action": f"select_product:{product.get('id')}", "type": "primary"})
+                        
+                        state["button_suggestions"] = buttons
+                        state["messages"].append({"role": "assistant", "content": reply})
+                        logger.info("node=response asking_which_product_for_contents multiple_products=%d buttons=%d", len(last_recs), len(buttons))
+                        return state
+                    else:
+                        # Try to find the mentioned product
+                        for rec in last_recs:
+                            if rec.get("name", "").lower() in llm_decision.lower():
+                                product = rec
+                                break
+                
+                # Use the product found above, or first one
                 if not product:
                     product = last_recs[0] if last_recs else {}
+                name = product.get("name", "this product")
+                desc = product.get("short_description", "")
+                notes = product.get("notes", {})
                 
-                # Handle price questions
-                if any(word in user_text_lower for word in ["price", "cost", "how much"]):
-                    price = product.get("price", 0)
-                    name = product.get("name", "this product")
-                    if price:
-                        reply = f"The price of {name} is ₹{price}. Want to see it or explore other options?"
-                    else:
-                        reply = f"I don't have the price information for {name} right now. Can I help you with anything else?"
-                    
-                    # Add action buttons
-                    buttons = []
-                    product_url = product.get("product_url", "")
-                    if product_url:
-                        buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
-                    
-                    # Add other options button if more recommendations available
-                    current_index = state.get("recommendation_index", 0)
-                    remaining = len(last_recs) - current_index - 1
-                    if remaining > 0:
-                        buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
-                    
-                    # Add safer/bolder buttons
-                    current_price = product.get("price", 0)
-                    safer_exists = any(p.get("price", 0) < current_price for p in last_recs if p.get("id") != product.get("id"))
-                    if safer_exists:
-                        buttons.append({"label": "Show Safer Option", "action": "show_safer", "type": "secondary"})
-                    
-                    bolder_exists = any(p.get("price", 0) > current_price for p in last_recs if p.get("id") != product.get("id"))
-                    if bolder_exists:
-                        buttons.append({"label": "Show Bolder Option", "action": "show_bolder", "type": "secondary"})
-                    
-                    if buttons:
-                        state["button_suggestions"] = buttons
-                    
-                    state["messages"].append({"role": "assistant", "content": reply})
-                    logger.info("node=response answered_price_question=1 buttons=%d", len(buttons))
-                    return state
+                reply_parts = [f"{name}"]
+                if desc:
+                    reply_parts.append(f"includes: {desc}")
                 
-                # Handle occasion/when to wear questions
-                if any(phrase in user_text_lower for phrase in ["when", "wear", "occasion", "use", "suitable"]):
-                    name = product.get("name", "this product")
-                    occasion_tags = product.get("occasion_tags", [])
-                    vibe_tags = product.get("vibe_tags", [])
-                    
-                    reply_parts = [f"{name} is great for"]
-                    
-                    if occasion_tags:
-                        # Format occasions nicely
-                        occasions = [occ.replace("_", " ") for occ in occasion_tags]
-                        if len(occasions) == 1:
-                            reply_parts.append(occasions[0])
-                        elif len(occasions) == 2:
-                            reply_parts.append(f"{occasions[0]} and {occasions[1]}")
+                # Extract notes if available
+                all_notes = []
+                if notes:
+                    all_notes = (
+                        notes.get("head", []) + 
+                        notes.get("heart", []) + 
+                        notes.get("base", [])
+                    )
+                
+                if all_notes:
+                    notes_str = ", ".join(all_notes[:5])  # Limit to first 5 notes
+                    reply_parts.append(f"Key notes: {notes_str}")
+                
+                reply = ". ".join(reply_parts) + ". Want to see it or explore other options?"
+                
+                # Add action buttons
+                buttons = []
+                product_url = product.get("product_url", "")
+                if product_url:
+                    buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
+                
+                current_index = state.get("recommendation_index", 0)
+                remaining = len(last_recs) - current_index - 1
+                if remaining > 0:
+                    buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
+                
+                if buttons:
+                    state["button_suggestions"] = buttons
+                
+                state["messages"].append({"role": "assistant", "content": reply})
+                logger.info("node=response answered_contents_question=1 buttons=%d", len(buttons))
+                return state
+            
+            # Handle fragrance notes questions (including typo "nodes")
+            if any(phrase in user_text_lower for phrase in ["what notes", "what nodes", "notes in", "nodes in", "fragrance notes", "which notes", "tell me about notes"]):
+                # If no product found yet, try to find it from the query
+                if not product:
+                    # If we have last_recs but couldn't match, check if multiple products
+                    if len(last_recs) > 1:
+                        # Get recent conversation for better context
+                        user_messages = [m["content"] for m in state["messages"] if m["role"] == "user"]
+                        recent_context = " ".join(user_messages[-3:]) if len(user_messages) > 1 else user_text
+                        
+                        import json
+                        products_list = [p.get("name", "") for p in last_recs]
+                        llm_prompt = f"""User has these products in context: {', '.join(products_list)}
+Recent conversation: {recent_context}
+Current question: "{user_text}"
+
+Did the user mention a specific product name in their question? Consider phrases like product names (e.g., "Selfmade", "Lights Off", "Love Drunk").
+
+Reply with only the specific product name if clearly mentioned, or 'CLARIFY' if no specific product was mentioned."""
+                        
+                        llm_decision = _call_llm(llm_prompt).strip()
+                        
+                        if llm_decision == "CLARIFY":
+                            # Ask for clarification with buttons
+                            product_names = [p.get("name", "") for p in last_recs]
+                            reply = f"Which perfume are you asking about? You have: {', '.join(product_names)}."
+                            
+                            # Add buttons for each product
+                            buttons = []
+                            for p_option in last_recs:
+                                product_name = p_option.get("name", "")
+                                if product_name:
+                                    buttons.append({"label": product_name, "action": f"select_product:{p_option.get('id')}", "type": "primary"})
+                            
+                            state["button_suggestions"] = buttons
+                            state["messages"].append({"role": "assistant", "content": reply})
+                            logger.info("node=response asking_which_product_for_notes multiple_products=%d buttons=%d", len(last_recs), len(buttons))
+                            return state
                         else:
-                            reply_parts.append(f"{', '.join(occasions[:-1])}, and {occasions[-1]}")
-                    else:
-                        reply_parts.append("everyday wear")
+                            # Try to find the mentioned product
+                            for rec in last_recs:
+                                if rec.get("name", "").lower() in llm_decision.lower():
+                                    product = rec
+                                    break
                     
-                    # Add vibe context
-                    if vibe_tags:
-                        vibe_desc = ", ".join(vibe_tags[:3])
-                        reply_parts.append(f"It has {vibe_desc} vibes.")
+                    # Still no product? Use first from last_recs or show error
+                    if not product:
+                        if last_recs:
+                            product = last_recs[0]
+                        else:
+                            # No product in context, inform user
+                            reply = "I'm not sure which perfume you're asking about. Could you tell me which one, or would you like me to recommend something?"
+                            state["messages"].append({"role": "assistant", "content": reply})
+                            logger.info("node=response notes_question_no_product_context=1")
+                            return state
+                
+                # Now we have a product, extract and show notes
+                name = product.get("name", "this product")
+                notes = product.get("notes", {})
+                
+                if notes:
+                    head_notes = notes.get("head", [])
+                    heart_notes = notes.get("heart", [])
+                    base_notes = notes.get("base", [])
+                    
+                    reply_parts = [f"{name} has"]
+                    notes_desc = []
+                    
+                    if head_notes:
+                        notes_desc.append(f"top notes of {', '.join(head_notes)}")
+                    if heart_notes:
+                        notes_desc.append(f"heart notes of {', '.join(heart_notes)}")
+                    if base_notes:
+                        notes_desc.append(f"base notes of {', '.join(base_notes)}")
+                    
+                    if notes_desc:
+                        reply_parts.append("; ".join(notes_desc) + ".")
+                    else:
+                        reply_parts.append("a unique fragrance profile.")
                     
                     reply = " ".join(reply_parts) + " Want to see it or explore other options?"
-                    
-                    # Add action buttons
-                    buttons = []
-                    product_url = product.get("product_url", "")
-                    if product_url:
-                        buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
-                    
-                    # Add other options button if more recommendations available
-                    current_index = state.get("recommendation_index", 0)
-                    remaining = len(last_recs) - current_index - 1
-                    if remaining > 0:
-                        buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
-                    
-                    # Add safer/bolder buttons
-                    current_price = product.get("price", 0)
-                    current_vibes = product.get("vibe_tags", [])
-                    
-                    safer_candidates = [
-                        p for p in last_recs 
-                        if p.get("id") != product.get("id") and (
-                            p.get("price", 0) < current_price or
-                            any(v in p.get("vibe_tags", []) for v in ["fresh", "clean", "light", "breezy"])
-                        )
-                    ]
-                    if safer_candidates:
-                        buttons.append({"label": "Show Safer Option", "action": "show_safer", "type": "secondary"})
-                    
-                    bolder_candidates = [
-                        p for p in last_recs 
-                        if p.get("id") != product.get("id") and (
-                            p.get("price", 0) > current_price or
-                            any(v in p.get("vibe_tags", []) for v in ["bold", "intense", "strong", "oud", "spicy"])
-                        )
-                    ]
-                    if bolder_candidates:
-                        buttons.append({"label": "Show Bolder Option", "action": "show_bolder", "type": "secondary"})
-                    
-                    if buttons:
-                        state["button_suggestions"] = buttons
-                    
-                    state["messages"].append({"role": "assistant", "content": reply})
-                    logger.info("node=response answered_occasion_question=1 buttons=%d", len(buttons))
-                    return state
+                else:
+                    # No notes data available
+                    reply = f"{name} is a beautiful fragrance. Want to see it or explore other options?"
                 
-                # Handle questions about contents/what's included
-                if any(phrase in user_text_lower for phrase in ["what do i get", "what's in", "what is in", "what comes", "contents", "includes"]):
-                    # Use the product found above, or first one
-                    if not product:
-                        product = last_recs[0] if last_recs else {}
-                    name = product.get("name", "this product")
-                    desc = product.get("short_description", "")
-                    notes = product.get("notes", {})
-                    
-                    reply_parts = [f"{name}"]
-                    if desc:
-                        reply_parts.append(f"includes: {desc}")
-                    
-                    # Extract notes if available
-                    all_notes = []
-                    if notes:
-                        all_notes = (
-                            notes.get("head", []) + 
-                            notes.get("heart", []) + 
-                            notes.get("base", [])
-                        )
-                    
-                    if all_notes:
-                        notes_str = ", ".join(all_notes[:5])  # Limit to first 5 notes
-                        reply_parts.append(f"Key notes: {notes_str}")
-                    
-                    reply = ". ".join(reply_parts) + ". Want to see it or explore other options?"
-                    
-                    # Add action buttons
-                    buttons = []
-                    product_url = product.get("product_url", "")
-                    if product_url:
-                        buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
-                    
-                    current_index = state.get("recommendation_index", 0)
-                    remaining = len(last_recs) - current_index - 1
-                    if remaining > 0:
-                        buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
-                    
-                    if buttons:
-                        state["button_suggestions"] = buttons
-                    
-                    state["messages"].append({"role": "assistant", "content": reply})
-                    logger.info("node=response answered_contents_question=1 buttons=%d", len(buttons))
-                    return state
+                # Add action buttons
+                buttons = []
+                product_url = product.get("product_url", "")
+                if product_url:
+                    buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
                 
-                # Handle other questions - use LLM but with structured product data
-                import json
-                products_context = json.dumps(last_recs[:2], indent=2)
+                current_index = state.get("recommendation_index", 0)
+                remaining = len(last_recs) - current_index - 1
+                if remaining > 0:
+                    buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
                 
-                # Get conversation context (recent user messages for occasion/context)
-                user_messages = [m["content"] for m in state["messages"] if m["role"] == "user"]
-                conversation_context = " ".join(user_messages[-3:]) if len(user_messages) > 1 else ""
+                if buttons:
+                    state["button_suggestions"] = buttons
                 
-                # Get user preferences for context
-                prefs = state.get("preferences") or {}
-                occasion_context = ""
-                if prefs.get("occasion_raw"):
-                    # Use raw occasion text (e.g., "wedding") for natural reference
-                    occasion_context = f"\nUser mentioned occasion: {prefs.get('occasion_raw')}"
-                elif prefs.get("occasions"):
-                    occasions = prefs.get("occasions", [])
-                    occasion_context = f"\nUser mentioned occasion: {', '.join(occasions)}"
-                
-                prompt = f"""{ASSISTANT_STYLE_PROMPT}
+                state["messages"].append({"role": "assistant", "content": reply})
+                logger.info("node=response answered_notes_question=1 product=%s buttons=%d", name, len(buttons))
+                return state
+            
+            # Handle other questions - use LLM but with structured product data
+            import json
+            products_context = json.dumps(last_recs[:2], indent=2)
+            
+            # Get conversation context (recent user messages for occasion/context)
+            user_messages = [m["content"] for m in state["messages"] if m["role"] == "user"]
+            conversation_context = " ".join(user_messages[-3:]) if len(user_messages) > 1 else ""
+            
+            # Get user preferences for context
+            prefs = state.get("preferences") or {}
+            occasion_context = ""
+            if prefs.get("occasion_raw"):
+                # Use raw occasion text (e.g., "wedding") for natural reference
+                occasion_context = f"\nUser mentioned occasion: {prefs.get('occasion_raw')}"
+            elif prefs.get("occasions"):
+                occasions = prefs.get("occasions", [])
+                occasion_context = f"\nUser mentioned occasion: {', '.join(occasions)}"
+            
+            prompt = f"""{ASSISTANT_STYLE_PROMPT}
 
 The user is asking about these recommended products:
 {products_context}
@@ -970,32 +1368,34 @@ IMPORTANT:
 Answer their question naturally using ONLY the data provided above.
 End with: "Want to see it or explore other options?"
 """
-                answer = _call_llm(prompt)
-                
-                # Add action buttons
-                buttons = []
-                current_index = state.get("recommendation_index", 0)
-                if current_index < len(last_recs):
-                    product = last_recs[current_index]
-                    product_url = product.get("product_url", "")
-                    if product_url:
-                        buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
-                
-                remaining = len(last_recs) - current_index - 1
-                if remaining > 0:
-                    buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
-                
-                if buttons:
-                    state["button_suggestions"] = buttons
-                
-                state["messages"].append({"role": "assistant", "content": answer})
-                logger.info("node=response answered_product_question=1 buttons=%d", len(buttons))
-                return state
-        else:
-            # No last recommendations - might be asking about a product in general
-            reply = "I don't have any products in context right now. Could you tell me what you're looking for? Can I help you with anything else?"
+            answer = _call_llm(prompt)
+            
+            # Add action buttons
+            buttons = []
+            current_index = state.get("recommendation_index", 0)
+            if current_index < len(last_recs):
+                product = last_recs[current_index]
+                product_url = product.get("product_url", "")
+                if product_url:
+                    buttons.append({"label": "View Product", "action": f"open_url:{product_url}", "type": "success"})
+            
+            remaining = len(last_recs) - current_index - 1
+            if remaining > 0:
+                buttons.append({"label": "Other Options", "action": "show_other", "type": "primary"})
+            
+            if buttons:
+                state["button_suggestions"] = buttons
+            
+            state["messages"].append({"role": "assistant", "content": answer})
+            logger.info("node=response answered_product_question=1 buttons=%d", len(buttons))
+            return state
+        
+        # If we reach here, no product was found
+        if not last_recs:
+            # No product found - provide helpful response
+            reply = "I couldn't find that product. Could you tell me what you're looking for? I can help you find the perfect perfume!"
             state["messages"].append({"role": "assistant", "content": reply})
-            logger.info("node=response product_question_no_context=1")
+            logger.info("node=response product_question_no_product_found=1")
             return state
 
     # Handle BYOB flow
@@ -1066,6 +1466,9 @@ End with: "Want to see it or explore other options?"
                             selected_products = validation["products"]
                             total_price = validation["total_price"]
                             
+                            # Store selected products in last_recommendations for follow-up questions
+                            state["last_recommendations"] = selected_products
+                            
                             # Build summary
                             product_names = [p.get("name", "") for p in selected_products]
                             reply = f"Perfect! Your custom box includes: {', '.join(product_names)}. "
@@ -1079,7 +1482,7 @@ End with: "Want to see it or explore other options?"
                             reply = "There was an issue with your selections. Let's start over. Can I help you with anything else?"
                         
                         state["messages"].append({"role": "assistant", "content": reply})
-                        # Clear selections after completion
+                        # Clear selections and awaiting_choice after completion
                         state["byob_selections"] = []
                         state["awaiting_choice"] = None
                         logger.info("node=response byob_completed=1")
@@ -1160,6 +1563,39 @@ End with: "Want to see it or explore other options?"
         has_scent_type = isinstance(prefs.get("scent_types"), list) and len(prefs.get("scent_types", [])) > 0
         has_budget = prefs.get("budget") is not None
         
+        # Detect intent switch: from find_perfume/product_recommendation to gift_recommendation
+        previous_intent = state.get("previous_intent")
+        intent_switched_to_gift = (
+            intent == "gift_recommendation" and 
+            previous_intent in ("find_perfume", "product_recommendation") and
+            not prefs.get("is_gift")
+        )
+        
+        # If switching to gift_recommendation, reset the flow but keep budget
+        if intent_switched_to_gift:
+            logger.info("node=response intent_switch_to_gift from=%s resetting_flow=1", previous_intent)
+            # Keep budget if already set, but reset other preferences and questions
+            existing_budget = prefs.get("budget")
+            prefs = {
+                "gender": None,
+                "scent_types": [],
+                "budget": existing_budget,  # Preserve budget
+                "occasions": [],
+                "vibes": [],
+                "specific_notes": [],
+                "is_gift": True,
+                "occasion_raw": None,
+            }
+            state["preferences"] = prefs
+            # Reset questions but mark budget as asked if it exists
+            questions_asked = ["budget"] if existing_budget else []
+            state["questions_asked"] = questions_asked
+            # Clear recommendations
+            state["recommendations"] = None
+            state["recommendation_index"] = 0
+            has_gender = False
+            has_scent_type = False
+        
         # If intent is gift_recommendation, mark as gift
         is_gift = prefs.get("is_gift", False) or intent == "gift_recommendation"
         if intent == "gift_recommendation" and not prefs.get("is_gift"):
@@ -1170,7 +1606,11 @@ End with: "Want to see it or explore other options?"
         if "questions_asked" not in state:
             state["questions_asked"] = []
         
-        questions_asked = state.get("questions_asked", [])
+        if not intent_switched_to_gift:
+            questions_asked = state.get("questions_asked", [])
+        
+        # Store current intent for next turn
+        state["previous_intent"] = intent
         
         # If gender was auto-detected (e.g., from "girlfriend", "boyfriend"), mark it as asked
         if has_gender and "gender" not in questions_asked:
@@ -1196,8 +1636,14 @@ End with: "Want to see it or explore other options?"
         
         # Only recommend if we have sufficient preferences AND recommendations exist
         if has_sufficient_prefs:
+            # Get recommendations from tool_result (fresh) or from state (stored from previous turn)
+            recs = None
             if isinstance(tool_result, dict) and tool_result.get("recommendations"):
                 recs = tool_result["recommendations"]
+            elif state.get("recommendations"):
+                recs = state.get("recommendations")
+            
+            if recs:
                 
                 # Check what the user is asking for
                 user_text_lower = user_text.lower()
@@ -1257,7 +1703,9 @@ End with: "Want to see it or explore other options?"
                 # Check if we have more recommendations to show
                 if current_index < len(recs):
                     top = recs[current_index]
-                    state["last_recommendations"] = recs  # Keep all recommendations
+                    # Store all recommendations internally for navigation, but only show the current one
+                    state["recommendations"] = recs  # Keep all recommendations for "Other Options" navigation
+                    state["last_recommendations"] = [top]  # Store only the currently shown product
                     state["recommendation_index"] = current_index  # Update index
                     
                     name = top.get("name", "")
@@ -1357,15 +1805,77 @@ End with: "Want to see it or explore other options?"
                     return state
             else:
                 # Sufficient preferences but NO recommendations found (e.g. strict budget filter)
-                # Check what might be the blocker
-                reply = "I couldn't find any perfumes matching your exact criteria."
-                if has_budget:
-                    reply += " It might be the budget constraint. Would you like to see options with a slightly higher budget?"
+                # Provide helpful suggestions based on what might be blocking
+                reply_parts = ["I couldn't find any perfumes matching your exact criteria."]
+                
+                # Build suggestions based on preferences
+                suggestions = []
+                buttons = []
+                
+                # Check budget constraint
+                budget = prefs.get("budget")
+                if budget and budget.get("operator") == "under":
+                    amount = budget.get("amount", 0)
+                    suggestions.append(f"try a higher budget (above ₹{amount})")
+                    buttons.append({"label": f"Above ₹{amount}", "action": f"select_budget:above_{amount}", "type": "primary"})
+                elif budget and budget.get("operator") == "over":
+                    amount = budget.get("amount", 0)
+                    suggestions.append(f"try a lower budget (under ₹{amount})")
+                    buttons.append({"label": f"Under ₹{amount}", "action": f"select_budget:under_{amount}", "type": "primary"})
+                
+                # Check occasion constraint
+                occasions = prefs.get("occasions", [])
+                if occasions and len(occasions) == 1:
+                    # Suggest alternative occasions
+                    current_occasion = occasions[0]
+                    occasion_alternatives = {
+                        "formal": ("casual", "Daily/Casual"),
+                        "casual": ("formal", "Office/Formal"),
+                        "date_night": ("party", "Party/Night Out"),
+                        "party": ("casual", "Daily/Casual"),
+                    }
+                    if current_occasion in occasion_alternatives:
+                        alt_key, alt_label = occasion_alternatives[current_occasion]
+                        suggestions.append(f"try {alt_label.lower()}")
+                        buttons.append({"label": alt_label, "action": f"select_occasion:{alt_key}", "type": "primary"})
+                
+                # Check scent type constraint
+                scent_types = prefs.get("scent_types", [])
+                if scent_types and len(scent_types) == 1:
+                    # Suggest alternative scent types
+                    current_scent = scent_types[0]
+                    scent_alternatives = {
+                        "oud": ("woody", "Woody/Earthy"),
+                        "spicy": ("fresh", "Fresh/Breezy"),
+                        "fresh": ("sweet", "Sweet/Gourmand"),
+                        "sweet": ("floral", "Floral/Soft"),
+                        "floral": ("fresh", "Fresh/Breezy"),
+                        "woody": ("spicy", "Spicy/Bold"),
+                    }
+                    if current_scent in scent_alternatives:
+                        alt_key, alt_label = scent_alternatives[current_scent]
+                        suggestions.append(f"try {alt_label.lower()}")
+                        buttons.append({"label": alt_label, "action": f"select_vibe:{alt_key}", "type": "primary"})
+                
+                # Build final reply
+                if suggestions:
+                    reply_parts.append(f"Would you like to {' or '.join(suggestions)}?")
                 else:
-                    reply += " Would you like to adjust your preferences?"
+                    reply_parts.append("Would you like to adjust your preferences?")
+                    # Generic buttons if no specific suggestions
+                    buttons = [
+                        {"label": "Change Budget", "action": "change_budget", "type": "primary"},
+                        {"label": "Change Occasion", "action": "change_occasion", "type": "primary"},
+                        {"label": "Change Vibe", "action": "change_vibe", "type": "primary"},
+                    ]
+                
+                reply = " ".join(reply_parts)
+                
+                if buttons:
+                    state["button_suggestions"] = buttons
                 
                 state["messages"].append({"role": "assistant", "content": reply})
-                logger.info("node=response no_recommendations_found sufficient_prefs=1")
+                logger.info("node=response no_recommendations_found sufficient_prefs=1 suggestions=%d", len(suggestions))
                 return state
         
         # Ask for missing preferences ONE AT A TIME with button suggestions

@@ -220,7 +220,9 @@ def _detect_single_perfume_intent(text: str) -> bool:
         "a perfume", "a bottle", "individual perfume", "individual product", "just one",
         "not a set", "not a package", "not a gift set", "not package", "no package",
         "not a collection", "no collection", "not collection",
-        "i want single", "want single", "need single"
+        "i want single", "want single", "need single", "show single", "single option",
+        "singel perfume", "singel bottle", "singel product", "singel option",  # Handle typos
+        "only one", "just a perfume", "just a bottle", "individual bottle"
     ]
     return any(kw in text_lower for kw in single_keywords)
 

@@ -71,6 +71,7 @@ body {
     transform: translateY(100%);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
@@ -79,4 +80,74 @@ body {
 
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
+}
+
+/* Bouncy entrance animation */
+@keyframes bounce-enter {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.3);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-5px) scale(1.05);
+  }
+
+  70% {
+    transform: translateY(2px) scale(0.95);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Sequential wave: One-by-one jump effect */
+@keyframes sequential-wave {
+
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 2px 8px rgba(242, 92, 84, 0.15);
+  }
+
+  5% {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: 0 8px 16px rgba(242, 92, 84, 0.2);
+  }
+
+  10% {
+    transform: translateY(0) scale(1);
+    box-shadow: 0 2px 8px rgba(242, 92, 84, 0.15);
+  }
+}
+
+.suggestion-chip {
+  opacity: 0;
+  /* Start hidden */
+  animation:
+    bounce-enter 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+    sequential-wave 4s ease-in-out infinite;
+  animation-delay:
+    var(--suggestion-delay, 0ms),
+    calc(var(--suggestion-delay, 0ms) + 0.8s);
+  /* Start wave after entrance */
+  box-shadow: 0 2px 8px rgba(242, 92, 84, 0.15);
+  border: 1px solid rgba(242, 92, 84, 0.2);
+}
+
+.suggestion-chip:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(242, 92, 84, 0.25);
+}
+
+.suggestion-chip.is-disabled {
+  animation: none;
+  opacity: 1;
+  transform: none;
+  box-shadow: none;
+  border-color: #e2e8f0;
+  cursor: not-allowed;
 }

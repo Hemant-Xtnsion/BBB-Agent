@@ -80,21 +80,49 @@ def list_products():
     return PRODUCTS_DATA
 
 
-def get_product_by_name(name: str):
-    """Get a product by name (exact or partial match)"""
-    name = name.lower().strip()
-    # Try exact match first
-    for p in PRODUCTS_DATA:
-        if p.get("name", "").lower() == name:
+def get_product_by_name(query: str):
+    """Get a product by name (exact or partial match) - extracts product name from query"""
+    query_lower = query.lower().strip()
+    
+    # First, try to find if any product name appears in the query
+    # Sort by name length (descending) to match longer names first
+    sorted_products = sorted(PRODUCTS_DATA, key=lambda p: len(p.get("name", "")), reverse=True)
+    
+    for p in sorted_products:
+        product_name = p.get("name", "")
+        if not product_name:
+            continue
+            
+        product_name_lower = product_name.lower()
+        
+        # Remove size suffixes for better matching (e.g., "- 100ml", "100ml", "50ml")
+        name_without_size = product_name_lower.replace(" - 100ml", "").replace(" - 50ml", "").replace(" 100ml", "").replace(" 50ml", "").strip()
+        
+        # Check if product name (without size) appears in query
+        if name_without_size and name_without_size in query_lower:
             return p
-    # Try partial match
-    for p in PRODUCTS_DATA:
-        if name in p.get("name", "").lower():
+        
+        # Check if product name (with size) appears in query
+        if product_name_lower in query_lower:
             return p
+        
+        # Check if significant words from product name appear in query
+        # Remove size indicators and common words
+        name_words = [w for w in name_without_size.replace("-", " ").split() 
+                     if len(w) > 2 and w not in ["the", "and", "for", "ml"]]
+        
+        # If at least 70% of significant words match, consider it a match
+        if name_words:
+            matching_words = sum(1 for w in name_words if w in query_lower)
+            if matching_words / len(name_words) >= 0.7:
+                return p
+    
     # Try handle match
-    for p in PRODUCTS_DATA:
-        if name in p.get("handle", "").lower():
+    for p in sorted_products:
+        handle = p.get("handle", "").lower()
+        if handle and handle in query_lower:
             return p
+    
     return None
 
 
