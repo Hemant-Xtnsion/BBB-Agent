@@ -14,10 +14,17 @@ class ChatRequest(BaseModel):
     conversation_id: Optional[str] = None  # Keep for compatibility with existing frontend
 
 
+class ButtonSuggestion(BaseModel):
+    label: str
+    action: str
+    type: str  # "primary", "secondary", "success", "danger"
+
+
 class ChatResponse(BaseModel):
     reply: str
     state: dict
     products: Optional[List[Dict[str, Any]]] = None
+    buttons: Optional[List[ButtonSuggestion]] = None
     # Keep existing fields for backward compatibility
     type: Optional[str] = None  # "text" or "products"
     message: Optional[str] = None  # Alias for reply

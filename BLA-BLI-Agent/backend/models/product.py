@@ -26,6 +26,13 @@ class Product(BaseModel):
         }
 
 
+class ButtonSuggestion(BaseModel):
+    """Button suggestion for user interaction"""
+    label: str
+    action: str
+    type: str  # "primary", "secondary", "success", "danger"
+
+
 class ChatMessage(BaseModel):
     """Chat message from user"""
     message: str
@@ -39,6 +46,7 @@ class ChatResponse(BaseModel):
     type: str  # "text" or "products"
     message: str
     products: Optional[List[Product]] = []
+    buttons: Optional[List[ButtonSuggestion]] = []
     state: Optional[dict] = None  # For order tracking state
     
     class Config:
@@ -46,6 +54,7 @@ class ChatResponse(BaseModel):
             "example": {
                 "type": "products",
                 "message": "Here are some sustainable clothing options:",
-                "products": []
+                "products": [],
+                "buttons": []
             }
         }

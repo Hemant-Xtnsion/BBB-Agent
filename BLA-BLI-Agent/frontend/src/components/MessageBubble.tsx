@@ -5,9 +5,11 @@ import { RiUserFill } from 'react-icons/ri';
 
 interface MessageBubbleProps {
     message: ChatMessage;
+    onButtonClick?: (action: string, label: string) => void;
+    isLatest?: boolean;
 }
 
-const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
+const MessageBubble: React.FC<MessageBubbleProps> = ({ message, onButtonClick, isLatest = true }) => {
     const isUser = message.type === 'user';
 
     return (
@@ -46,9 +48,53 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
                         <div className="mt-3">
                             <div className="grid grid-cols-2 gap-3">
                                 {message.products.map((product, index) => (
-                                    <ProductCard key={index} product={product} compact={true} />
+                                    <ProductCard 
+                                        key={index} 
+                                        product={product} 
+                                        compact={true}
+                                        buttons={message.buttons}
+                                        onButtonClick={onButtonClick}
+                                        isLatest={isLatest}
+                                    />
                                 ))}
                             </div>
+                        </div>
+                    )}
+
+                    {/* Button Suggestions - Filter out View Product and bolder/safer buttons when products are shown */}
+                    {!isUser && message.buttons && message.buttons.length > 0 && (
+                        <div className="mt-1 flex flex-wrap gap-1.5">
+                            {message.buttons
+                                .filter(button => {
+                                    // Hide View Product button if products are shown
+                                    if (message.products && message.products.length > 0) {
+                                        if (button.action.startsWith('open_url:') || button.label.toLowerCase().includes('view product')) {
+                                            return false;
+                                        }
+                                        // Hide bolder/safer buttons as they're shown in the card
+                                        if (button.action === 'show_bolder' || button.action === 'show_safer') {
+                                            return false;
+                                        }
+                                    }
+                                    return true;
+                                })
+                                .map((button, index) => (
+                                    <button
+                                        key={index}
+                                        onClick={() => isLatest && onButtonClick?.(button.action, button.label)}
+                                        disabled={!isLatest}
+                                        className={`
+                                            px-3 py-1.5 rounded-lg text-xs font-semibold
+                                            transition-all duration-200 shadow-sm whitespace-nowrap
+                                            ${isLatest 
+                                                ? 'bg-white text-rose-600 border border-rose-200 hover:bg-rose-50 hover:border-rose-300 hover:text-rose-700 hover:shadow-md cursor-pointer' 
+                                                : 'bg-gray-50 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60'
+                                            }
+                                        `}
+                                    >
+                                        {button.label}
+                                    </button>
+                                ))}
                         </div>
                     )}
 

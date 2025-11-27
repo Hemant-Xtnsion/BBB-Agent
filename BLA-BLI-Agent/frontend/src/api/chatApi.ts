@@ -32,3 +32,15 @@ export const checkHealth = async (): Promise<{ status: string }> => {
     const response = await apiClient.get('/health');
     return response.data;
 };
+
+export const clearConversation = async (
+    conversationId?: string
+): Promise<{ status: string; message: string }> => {
+    const request: ChatRequest = {
+        message: '', // Not used but required by ChatRequest
+        conversation_id: conversationId,
+    };
+
+    const response = await apiClient.post<{ status: string; message: string }>('/chat/clear', request);
+    return response.data;
+};

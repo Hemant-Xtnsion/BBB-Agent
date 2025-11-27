@@ -21,6 +21,22 @@ async def chat_options():
     return Response(status_code=200)
 
 
+@router.post("/chat/clear")
+async def clear_conversation(message: ChatMessage):
+    """
+    Clear conversation history and state for a conversation.
+    """
+    try:
+        conversation_id = message.conversation_id or "default"
+        history_service = get_history_service()
+        history_service.clear_history(conversation_id)
+        logger.info("endpoint=/chat/clear cleared_conversation=%s", conversation_id)
+        return {"status": "success", "message": "Conversation cleared"}
+    except Exception as e:
+        logger.exception("Error clearing conversation")
+        raise HTTPException(status_code=500, detail=f"Error clearing conversation: {str(e)}")
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(message: ChatMessage):
     """
@@ -78,20 +94,52 @@ async def chat(message: ChatMessage):
             "customer_authed": False,
             "customer_email": graph_request.email,
             "order_number": graph_request.order_number,
+            # Load last intent only for button-answer detection, but don't force it
+            # Intent will be re-detected by LLM unless it's a clear button answer
+            "intent": persisted_state.get("last_intent"),  # Renamed to last_intent to avoid confusion
             "preferences": persisted_state.get("preferences"),
             "last_recommendations": persisted_state.get("last_recommendations"),
             "recommendation_index": persisted_state.get("recommendation_index", 0),
+            "byob_selections": persisted_state.get("byob_selections", []),
+            "byob_max_items": persisted_state.get("byob_max_items", 3),
+            "awaiting_choice": persisted_state.get("awaiting_choice"),
+            "button_suggestions": persisted_state.get("button_suggestions"),
+            "questions_asked": persisted_state.get("questions_asked", []),
+            "handoff_state": persisted_state.get("handoff_state"),
+            "handoff_email": persisted_state.get("handoff_email"),
+            "handoff_phone": persisted_state.get("handoff_phone"),
+            "handoff_completed": persisted_state.get("handoff_completed", False),
         }
         
         result_state = compiled_app.invoke(initial_state)
         
         # Persist state after graph execution
+        # Save intent as last_intent for button-answer detection (but don't force it on next request)
+        if result_state.get("intent"):
+            history_service.update_state(conversation_id, last_intent=result_state["intent"])
         if result_state.get("preferences"):
             history_service.update_state(conversation_id, preferences=result_state["preferences"])
         if result_state.get("last_recommendations"):
             history_service.update_state(conversation_id, last_recommendations=result_state["last_recommendations"])
         if "recommendation_index" in result_state:
             history_service.update_state(conversation_id, recommendation_index=result_state["recommendation_index"])
+        # Always save byob_selections (even if empty list) to track state properly
+        if "byob_selections" in result_state:
+            history_service.update_state(conversation_id, byob_selections=result_state["byob_selections"])
+        if result_state.get("awaiting_choice"):
+            history_service.update_state(conversation_id, awaiting_choice=result_state["awaiting_choice"])
+        if result_state.get("button_suggestions"):
+            history_service.update_state(conversation_id, button_suggestions=result_state["button_suggestions"])
+        if result_state.get("questions_asked"):
+            history_service.update_state(conversation_id, questions_asked=result_state["questions_asked"])
+        if result_state.get("handoff_state") is not None:
+            history_service.update_state(conversation_id, handoff_state=result_state["handoff_state"])
+        if result_state.get("handoff_email"):
+            history_service.update_state(conversation_id, handoff_email=result_state["handoff_email"])
+        if result_state.get("handoff_phone"):
+            history_service.update_state(conversation_id, handoff_phone=result_state["handoff_phone"])
+        if result_state.get("handoff_completed"):
+            history_service.update_state(conversation_id, handoff_completed=result_state["handoff_completed"])
         
         # Extract assistant response
         assistant_msgs = [m for m in result_state["messages"] if m["role"] == "assistant"]
@@ -156,6 +204,20 @@ async def chat(message: ChatMessage):
                 for p in products
             ]
         
+        # Extract button suggestions from state
+        button_suggestions = result_state.get("button_suggestions")
+        buttons_to_send = []
+        if button_suggestions:
+            from models.product import ButtonSuggestion
+            buttons_to_send = [
+                ButtonSuggestion(
+                    label=btn.get("label", ""),
+                    action=btn.get("action", ""),
+                    type=btn.get("type", "primary")
+                )
+                for btn in button_suggestions
+            ]
+        
         # Extract state from graph result
         response_state = {
             "customer_authed": result_state.get("customer_authed", False),
@@ -163,12 +225,18 @@ async def chat(message: ChatMessage):
             "order_number": result_state.get("order_number"),
             "intent": result_state.get("intent"),
             "missing_field": result_state.get("missing_field"),
+            "awaiting_choice": result_state.get("awaiting_choice"),
+            "handoff_state": result_state.get("handoff_state"),
+            "handoff_email": result_state.get("handoff_email"),
+            "handoff_phone": result_state.get("handoff_phone"),
+            "handoff_completed": result_state.get("handoff_completed", False),
         }
         
         return ChatResponse(
             type=response_type,
             message=last_assistant,
             products=product_models,
+            buttons=buttons_to_send,
             state=response_state
         )
     
@@ -252,6 +320,20 @@ async def chat_graph(req: GraphChatRequest):
                         product["score"] = rec["score"]
                     products.append(product)
 
+        # Extract button suggestions from state
+        button_suggestions = result_state.get("button_suggestions")
+        buttons_to_send = []
+        if button_suggestions:
+            from models.chat import ButtonSuggestion
+            buttons_to_send = [
+                ButtonSuggestion(
+                    label=btn.get("label", ""),
+                    action=btn.get("action", ""),
+                    type=btn.get("type", "primary")
+                )
+                for btn in button_suggestions
+            ]
+        
         return GraphChatResponse(
             reply=last_assistant,
             state={
@@ -259,8 +341,10 @@ async def chat_graph(req: GraphChatRequest):
                 "customer_email": result_state.get("customer_email"),
                 "order_number": result_state.get("order_number"),
                 "intent": result_state.get("intent"),
+                "awaiting_choice": result_state.get("awaiting_choice"),
             },
             products=products,
+            buttons=buttons_to_send,
         )
     except Exception as e:
         logger.exception("Error in graph chat endpoint")

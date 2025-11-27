@@ -231,3 +231,120 @@ def get_return_policy():
         "days": brand.get("return_policy_days", 30),
     }
 
+
+def get_byob_products():
+    """Get products available for Build Your Own Box"""
+    # For "Make My Box" flow, only show individual 100ml Parfums
+    # Exclude pre-made boxes (Trial Set and Gift Set)
+    byob_eligible = []
+    for p in PRODUCTS_DATA:
+        category = p.get("category", "")
+        
+        # Only include individual 100ml Parfums (exclude Trial Set and Gift Set)
+        if category == "Parfum - 100ml":
+            byob_eligible.append({
+                "id": p.get("id", ""),
+                "name": p.get("name", ""),
+                "price": p.get("price", 0),
+                "short_description": p.get("short_description", ""),
+                "image_url": p.get("image_url", ""),
+                "product_url": p.get("product_url", ""),
+                "gender_profile": p.get("gender_profile", ""),
+                "vibe_tags": p.get("vibe_tags", []),
+            })
+    
+    return byob_eligible
+
+
+def validate_byob_selection(selected_ids: List[str], max_items: int = 3) -> Dict:
+    """Validate BYOB selections"""
+    byob_products = get_byob_products()
+    byob_ids = [p.get("id") for p in byob_products]
+    
+    # Check if all selected IDs are valid
+    invalid_ids = [sid for sid in selected_ids if sid not in byob_ids]
+    if invalid_ids:
+        return {
+            "valid": False,
+            "error": "invalid_products",
+            "invalid_ids": invalid_ids
+        }
+    
+    # Check if count is within limit
+    if len(selected_ids) > max_items:
+        return {
+            "valid": False,
+            "error": "too_many_items",
+            "max_items": max_items,
+            "selected_count": len(selected_ids)
+        }
+    
+    if len(selected_ids) < max_items:
+        return {
+            "valid": False,
+            "error": "too_few_items",
+            "max_items": max_items,
+            "selected_count": len(selected_ids)
+        }
+    
+    # Get selected products
+    selected_products = [p for p in byob_products if p.get("id") in selected_ids]
+    total_price = sum(p.get("price", 0) for p in selected_products)
+    
+    return {
+        "valid": True,
+        "products": selected_products,
+        "total_price": total_price
+    }
+
+
+def get_faq_answer(question: str) -> Optional[str]:
+    """Get FAQ answers for general questions"""
+    question_lower = question.lower()
+    
+    # Check for unusual or unclear questions that need human clarification
+    # These patterns indicate the question is asking about permissions/allowances (unclear)
+    permission_patterns = [
+        "do you allow", "do you permit", "can i", "can you", "is it possible",
+        "are you able", "would you", "will you allow", "does it allow"
+    ]
+    
+    # Unusual keywords that suggest the question is about something non-standard
+    unusual_keywords = ["dog", "dogs", "pet", "pets", "animal", "animals", "food", "hazardous", "dangerous"]
+    
+    # Check if question contains permission patterns combined with unusual keywords
+    # e.g., "do you allow dogs shipping" - has "do you allow" + "dogs" + "shipping"
+    has_permission_pattern = any(pattern in question_lower for pattern in permission_patterns)
+    has_unusual_keyword = any(keyword in question_lower for keyword in unusual_keywords)
+    
+    # If question asks about allowing/permitting something unusual, don't return FAQ answer
+    if has_permission_pattern and has_unusual_keyword:
+        return None
+    
+    # Also check for questions that are clearly asking about unusual combinations
+    # e.g., "dogs shipping", "pet shipping", etc.
+    if has_unusual_keyword:
+        # Check if it's combined with FAQ keywords in an unusual way
+        faq_keywords = ["shipping", "return", "exchange", "payment", "gift"]
+        has_faq_keyword = any(keyword in question_lower for keyword in faq_keywords)
+        if has_faq_keyword:
+            # This is an unusual question like "dogs shipping" - needs human clarification
+            return None
+    
+    faq_data = {
+        "ingredients": "Our perfumes use high-quality ingredients including essential oils, aroma compounds, and fixatives. Each product page lists specific notes. All our products are cruelty-free.",
+        "shipping": "We offer free shipping on orders over ₹500. Orders are dispatched within 1-2 business days. Delivery typically takes 3-5 business days.",
+        "return": "We offer a 30-day return policy. If you're not satisfied with your purchase, you can return it within 30 days for a full refund.",
+        "exchange": "Yes, we accept exchanges within 30 days of purchase. The product should be unused and in original packaging.",
+        "trial": "Yes, we offer 10ml trial sizes for most of our perfumes. You can also build your own trial box with 3 perfumes of your choice.",
+        "payment": "We accept all major credit/debit cards, UPI, net banking, and digital wallets. All payments are secure and encrypted.",
+        "discount": "Check our website for current offers. We regularly run promotions on perfume sets and combos. Subscribe to our newsletter for exclusive deals.",
+        "gift": "Yes! We have curated gift sets perfect for gifting. You can also build a custom gift box with our Build Your Own Box option.",
+    }
+    
+    # Match question to FAQ for clear, straightforward questions
+    for keyword, answer in faq_data.items():
+        if keyword in question_lower:
+            return answer
+    
+    return None

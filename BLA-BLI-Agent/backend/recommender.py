@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 # Try to load products from products.json, fallback to sample if not available
 PRODUCTS_PATH = Path(__file__).parent / "data" / "products.json"
@@ -197,19 +197,30 @@ def _detect_vibe(text: str) -> List[str]:
 
 
 def _detect_gift_intent(text: str) -> bool:
-    """Detect if user is asking for gift packages"""
+    """Detect if user is asking for gift packages, collections, or sets"""
     text_lower = text.lower()
-    gift_keywords = ["gift", "gifting", "gift set", "gift package", "gift box", "present", "package"]
-    return any(kw in text_lower for kw in gift_keywords)
+    gift_keywords = [
+        "gift", "gifting", "gift set", "gift package", "gift box", "present",
+        "i want package", "want package", "show me package", "give me package",
+        "i want collection", "want collection", "show me collection",
+        "i want set", "want set", "show me set"
+    ]
+    # Exclude cases where user explicitly says they don't want these
+    exclude_keywords = ["not a", "no ", "not ", "don't want", "dont want", "single"]
+    has_exclude = any(excl in text_lower for excl in exclude_keywords)
+    has_gift = any(kw in text_lower for kw in gift_keywords)
+    return has_gift and not has_exclude
 
 
 def _detect_single_perfume_intent(text: str) -> bool:
-    """Detect if user wants a single perfume/bottle (not a gift set)"""
+    """Detect if user wants a single perfume/bottle (not a gift set/package)"""
     text_lower = text.lower()
     single_keywords = [
-        "single perfume", "single bottle", "one perfume", "one bottle",
-        "a perfume", "a bottle", "individual perfume", "just one",
-        "not a set", "not a package", "not a gift set"
+        "single perfume", "single bottle", "single product", "one perfume", "one bottle",
+        "a perfume", "a bottle", "individual perfume", "individual product", "just one",
+        "not a set", "not a package", "not a gift set", "not package", "no package",
+        "not a collection", "no collection", "not collection",
+        "i want single", "want single", "need single"
     ]
     return any(kw in text_lower for kw in single_keywords)
 
@@ -306,12 +317,13 @@ def extract_preferences_from_text(
         existing_vibes = prefs.get("vibes", [])
         prefs["vibes"] = list(set(existing_vibes + vibes))
 
-    # Extract gift intent - but unset if user wants a single perfume
-    if _detect_single_perfume_intent(text):
+    # Extract gift intent - gift keywords take precedence over single perfume keywords
+    # (e.g., "I want to gift a perfume" should be detected as gift, not single perfume)
+    if _detect_gift_intent(text):
+        prefs["is_gift"] = True
+    elif _detect_single_perfume_intent(text):
         # User explicitly wants a single perfume, not a gift set
         prefs["is_gift"] = False
-    elif _detect_gift_intent(text):
-        prefs["is_gift"] = True
 
     # Extract specific notes (vanilla, rose, etc.)
     specific_notes = _detect_specific_notes(text)

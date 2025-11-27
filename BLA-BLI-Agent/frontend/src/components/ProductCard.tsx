@@ -1,20 +1,27 @@
 import React from 'react';
-import { Product } from '../types/ChatTypes';
+import { Product, ButtonSuggestion } from '../types/ChatTypes';
 
 interface ProductCardProps {
     product: Product;
     compact?: boolean;
+    buttons?: ButtonSuggestion[];
+    onButtonClick?: (action: string, label: string) => void;
+    isLatest?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, compact = false }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, compact = false, buttons = [], onButtonClick, isLatest = true }) => {
     const handleViewProduct = () => {
         window.open(product.url, '_blank', 'noopener,noreferrer');
     };
 
     const handleAddToCart = () => {
-        // Dummy function - would integrate with actual cart in production
+        // Dummy function - would integrate with actual cart in bolder
         alert(`Added "${product.title}" to cart!`);
     };
+
+    // Filter bolder/safer buttons
+    const bolderButton = buttons.find(b => b.action === 'show_bolder');
+    const saferButton = buttons.find(b => b.action === 'show_safer');
 
     if (compact) {
         // Compact card for chat window - professional design with visible thumbnails
@@ -49,29 +56,81 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, compact = false }) =
                             </svg>
                         </div>
                     )}
-                    <div className="absolute inset-x-2 bottom-1 flex flex-col gap-1.5">
-                        <button
-                            onClick={handleViewProduct}
-                            className="w-full bg-white text-[#c01f2f] font-semibold py-1.5 px-2 rounded-md text-[11px] leading-none shadow border border-rose-100 hover:bg-rose-50 transition-colors"
-                        >
-                            View
-                        </button>
-                        <button
-                            onClick={handleAddToCart}
-                            className="w-full bg-gradient-to-r from-[#f25c54] to-[#d62839] text-white font-medium py-1.5 px-2 rounded-md text-[11px] leading-none shadow-sm hover:from-[#ff7c73] hover:to-[#f04646] transition-colors"
-                        >
-                            Add to Cart
-                        </button>
-                    </div>
+                    
+                    {/* Price Badge - Top Right */}
+                    {product.price && (
+                        <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded-md shadow-md border border-rose-100">
+                            <span className="text-[#c01f2f] font-bold text-[9px] leading-tight flex items-center gap-0.5">
+                                <span>₹</span>
+                                <span>{product.price.replace(/[₹,\s]/g, '')}</span>
+                            </span>
+                        </div>
+                    )}
                 </div>
 
                 {/* Product Info */}
                 <div className="p-3 flex flex-col flex-1">
-                    <h3 className="font-semibold text-gray-900 text-xs mb-1 line-clamp-2 group-hover:text-[#c01f2f] transition-colors leading-snug">
+                    <h3 className="font-semibold text-gray-900 text-xs mb-2 line-clamp-2 group-hover:text-[#c01f2f] transition-colors leading-snug">
                         {product.title}
                     </h3>
-
                     
+                    {/* Action Buttons */}
+                    <div className="flex flex-col gap-1.5 mt-auto">
+                        <button
+                            onClick={isLatest ? handleViewProduct : undefined}
+                            disabled={!isLatest}
+                            className={`w-full font-semibold py-1.5 px-2 rounded-md text-[10px] leading-tight shadow-sm transition-colors ${
+                                isLatest 
+                                    ? 'bg-white text-[#c01f2f] border border-rose-100 hover:bg-rose-50 cursor-pointer' 
+                                    : 'bg-gray-50 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60'
+                            }`}
+                        >
+                            View Product
+                        </button>
+                        <button
+                            onClick={isLatest ? handleAddToCart : undefined}
+                            disabled={!isLatest}
+                            className={`w-full font-medium py-1.5 px-2 rounded-md text-[10px] leading-tight shadow-sm transition-colors ${
+                                isLatest 
+                                    ? 'bg-gradient-to-r from-[#f25c54] to-[#d62839] text-white hover:from-[#ff7c73] hover:to-[#f04646] cursor-pointer' 
+                                    : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                            }`}
+                        >
+                            Add to Cart
+                        </button>
+                        
+                        {/* Bolder/Safer Option Buttons */}
+                        {(bolderButton || saferButton) && (
+                            <div className="flex gap-1.5 mt-1">
+                                {saferButton && (
+                                    <button
+                                        onClick={isLatest ? () => onButtonClick?.(saferButton.action, saferButton.label) : undefined}
+                                        disabled={!isLatest}
+                                        className={`flex-1 font-semibold py-1.5 px-2 rounded-md text-[10px] leading-tight shadow-sm transition-colors ${
+                                            isLatest 
+                                                ? 'bg-white text-[#c01f2f] border border-rose-200 hover:bg-rose-50 cursor-pointer' 
+                                                : 'bg-gray-50 text-gray-400 border border-gray-200 cursor-not-allowed opacity-60'
+                                        }`}
+                                    >
+                                        {saferButton.label.replace(' Option', '')}
+                                    </button>
+                                )}
+                                {bolderButton && (
+                                    <button
+                                        onClick={isLatest ? () => onButtonClick?.(bolderButton.action, bolderButton.label) : undefined}
+                                        disabled={!isLatest}
+                                        className={`flex-1 font-semibold py-1.5 px-2 rounded-md text-[10px] leading-tight shadow-sm transition-colors ${
+                                            isLatest 
+                                                ? 'bg-gradient-to-r from-[#f25c54] to-[#d62839] text-white hover:from-[#ff7c73] hover:to-[#f04646] cursor-pointer' 
+                                                : 'bg-gray-200 text-gray-400 cursor-not-allowed opacity-60'
+                                        }`}
+                                    >
+                                        {bolderButton.label.replace(' Option', '')}
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         );
